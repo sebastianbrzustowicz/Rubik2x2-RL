@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch
 from .q_network import QNetwork
 from .replay_buffer import ReplayBuffer
+from collections import deque
 
 class DQNAgent:
     def __init__(
@@ -15,7 +16,7 @@ class DQNAgent:
         epsilon_end=0.1,
         epsilon_decay=0.9995,
         batch_size=64,
-        target_update_freq=500,
+        target_update_freq=1000,
         device="cuda",
         use_mlflow=False
     ):
@@ -44,6 +45,7 @@ class DQNAgent:
         self.success_count = 0
         self.fail_count = 0
         self.episode_rewards = []
+        self.last_window_results = deque(maxlen=1000)
 
     def select_action(self, state):
         if np.random.rand() < self.epsilon:
@@ -57,13 +59,13 @@ class DQNAgent:
         if len(self.replay_buffer) < self.batch_size:
             return 0.0
 
-        batch = self.replay_buffer.sample(self.batch_size)
+        states, actions, rewards, next_states, dones = self.replay_buffer.sample(self.batch_size)
 
-        states = torch.tensor(batch.state, dtype=torch.float32, device=self.device)
-        actions = torch.tensor(batch.action, dtype=torch.int64, device=self.device).unsqueeze(1)
-        rewards = torch.tensor(batch.reward, dtype=torch.float32, device=self.device).unsqueeze(1)
-        next_states = torch.tensor(batch.next_state, dtype=torch.float32, device=self.device)
-        dones = torch.tensor(batch.done, dtype=torch.float32, device=self.device).unsqueeze(1)
+        states = torch.tensor(states, device=self.device)
+        actions = torch.tensor(actions, device=self.device).unsqueeze(1)
+        rewards = torch.tensor(rewards, device=self.device).unsqueeze(1)
+        next_states = torch.tensor(next_states, device=self.device)
+        dones = torch.tensor(dones, device=self.device).unsqueeze(1)
 
         q_values = self.q_net(states).gather(1, actions)
         with torch.no_grad():
@@ -77,61 +79,77 @@ class DQNAgent:
         self.optimizer.step()
         return loss.item()
 
-    def train(self, total_steps=100_000, log_every=1000):
+    def train(self, total_steps=100_000, log_every=10000, update_freq=4):
         state, _ = self.env.reset()
         episode_reward = 0
 
         for step in range(total_steps):
             self.global_step = step
 
-            # Choosing actions
             action = self.select_action(state)
             next_state, reward, terminated, truncated, info = self.env.step(action)
             done = terminated or truncated
 
-            # Replay buffer update
+            # Push to replay buffer
             self.replay_buffer.push(state, action, reward, next_state, done)
-            loss = self.update()
 
             state = next_state
             episode_reward += reward
 
             if done:
                 self.episode_rewards.append(episode_reward)
+                
                 if info.get("solved", False):
                     self.success_count += 1
+                    self.last_window_results.append(1)
                 else:
                     self.fail_count += 1
+                    self.last_window_results.append(0)
+
                 episode_reward = 0
                 state, _ = self.env.reset()
 
-            # Epsilon decay
             self.epsilon = max(self.epsilon * self.epsilon_decay, self.epsilon_min)
 
-            # Target update
+            # Update every `update_freq` steps
+            if step % update_freq == 0 and len(self.replay_buffer) >= self.batch_size:
+                self.update()
+
             if step % self.target_update_freq == 0:
                 self.target_net.load_state_dict(self.q_net.state_dict())
 
-            # MLflow logging every log_every steps
+            # Log every log_every steps
             if self.use_mlflow and step % log_every == 0 and step > 0:
                 avg_reward = np.mean(self.episode_rewards[-20:]) if self.episode_rewards else 0.0
                 total_episodes = self.success_count + self.fail_count
-                success_rate = (
-                    self.success_count / total_episodes if total_episodes > 0 else 0.0
-                )
+                success_rate = np.mean(self.last_window_results) if self.last_window_results else 0.0
+                max_reward = np.max(self.episode_rewards[-100:]) if self.episode_rewards else 0.0
 
-                mlflow.log_metrics({
-                    "epsilon": self.epsilon,
-                    "avg_reward": avg_reward,
+                metrics = {
                     "success_rate": success_rate,
+                    "epsilon": self.epsilon,
+                    "total_episodes": total_episodes,
+                    "current_scramble": info.get("current_scramble", 0),
                     "success_count": self.success_count,
-                    "fail_count": self.fail_count
-                }, step=step)
+                    "fail_count": self.fail_count,
+                    "avg_reward": avg_reward,
+                    "max_reward_in_window": max_reward,
+                }
 
+                # Log to MLflow
+                mlflow.log_metrics(metrics, step=step)
+
+                # Print the same metrics
                 print(
-                    f"[{step:07d}] ε={self.epsilon:.3f} | "
-                    f"avgR={avg_reward:.3f} | "
-                    f"success_rate={success_rate:.2%}"
+                    f"[{step:07d}] "
+                    f"ε={metrics['epsilon']:.3f} | "
+                    f"avgR={metrics['avg_reward']:.3f} | "
+                    f"maxR={metrics['max_reward_in_window']:.3f} | "
+                    f"success_rate={metrics['success_rate']:.2%} | "
+                    f"total_episodes={metrics['total_episodes']} | "
+                    f"success_count={metrics['success_count']} | "
+                    f"fail_count={metrics['fail_count']} | "
+                    f"current_scramble={metrics['current_scramble']}"
                 )
 
         print("✅ Training completed.")

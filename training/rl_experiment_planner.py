@@ -8,10 +8,18 @@ import torch
 def generate_experiments():
     """Creates a list of all parameter combinations."""
     grid = {
-        "reward_mode": ["basic", "sticker_plus_face", "lbl_progressive"],
-        "scramble_min": [1, 3],
-        "scramble_max": [5, 8],
-        "total_steps": [5_000, 10_000],
+        "reward_mode": ["bottom_layer_corners", "bottom_layer"],
+        "scramble_min": [8],
+        "scramble_max": [12],
+        "resets_per_jump": [80000],
+        "total_steps": [100000000],
+        "max_steps": [10],
+        "batch_size": [64],
+        "lr": [1e-4], # To test
+        "gamma": [0.99], # To test
+        "epsilon_start": [1.0],
+        "epsilon_end": [0.25, 0.15, 0.05], # 0.25, 0.05 works good
+        "epsilon_decay": [0.99995, 0.999995], # 0.99995, 0.999995 works good
         "device": ["cuda" if torch.cuda.is_available() else "cpu"],
     }
 
@@ -26,9 +34,16 @@ def run_experiment(config):
     start_time = time.time()
     model_path = train_rl_agent(
         total_steps=config["total_steps"],
+        max_steps=config["max_steps"],
         reward_mode=config["reward_mode"],
         scramble_min=config["scramble_min"],
-        scramble_max=config["scramble_max"],
+        resets_per_jump=config["resets_per_jump"],
+        batch_size=config["batch_size"],
+        lr=config["lr"],
+        gamma=config["gamma"],
+        epsilon_start=config["epsilon_start"],
+        epsilon_end=config["epsilon_end"],
+        epsilon_decay=config["epsilon_decay"],
         device=config["device"],
         use_mlflow=True
     )
@@ -44,6 +59,11 @@ def main():
     os.makedirs("experiments", exist_ok=True)
     csv_path = os.path.join("experiments", "experiment_results.csv")
 
+    # Count total experiments
+    experiments = list(generate_experiments())
+    total_experiments = len(experiments)
+    print(f"⚡ Total experiments to run: {total_experiments}")
+
     # CSV header
     with open(csv_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=[
@@ -52,7 +72,8 @@ def main():
         ])
         writer.writeheader()
 
-    for config in generate_experiments():
+    for i, config in enumerate(experiments, start=1):
+        print(f"\n🔹 Running experiment {i}/{total_experiments}")
         result = run_experiment(config)
 
         # Save results to CSV

@@ -1,1 +1,4 @@
+mlflow
 numpy
+torch
+gymnasium

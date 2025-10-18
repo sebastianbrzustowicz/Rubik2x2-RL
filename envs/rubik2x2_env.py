@@ -23,11 +23,10 @@ class Rubik2x2Env(gym.Env):
         reward_mode: str = "basic",
         scramble_min: int = 1,
         scramble_max: int = 20,
-        resets_per_jump: int = 500,
+        resets_per_jump: int = 5000,
         scramble_jump: int = 1,
         scramble_mode: str = "gradual",  # "gradual" or "weighted"
         render_mode: str | None = None,
-        n_envs: int = 1,
         device: str | None = None,
     ):
         super().__init__()
@@ -42,7 +41,6 @@ class Rubik2x2Env(gym.Env):
         self.scramble_mode = scramble_mode
         self.render_mode = render_mode
         self.device = device or ("cuda" if self._has_cuda() else "cpu")
-        self.n_envs = n_envs
 
         # State management
         self.cube = Cube2x2()
@@ -52,9 +50,9 @@ class Rubik2x2Env(gym.Env):
         self.level_resets_count = 0
 
         # Spaces
-        self.action_space = spaces.Discrete(12)  # 6 faces × 2 directions
+        self.action_space = spaces.Discrete(18)  # 6 faces × 3 directions
         self.observation_space = spaces.Box(
-            low=0.0, high=5.0, shape=(24,), dtype=np.float32
+            low=0.0, high=5.0, shape=(24 * 6,), dtype=np.float32
         )
 
     # --------------------------------------------------------------
@@ -83,12 +81,14 @@ class Rubik2x2Env(gym.Env):
 
     def step(self, action: int):
         face_id = action % 6
-        direction = action // 6
+        direction = action // 6  # 0=CW, 1=CCW, 2=180
 
         if direction == 0:
             self.cube.rotate_cw(face_id)
-        else:
+        elif direction == 1:
             self.cube.rotate_ccw(face_id)
+        else:
+            self.cube.rotate_180(face_id)
 
         self.current_step += 1
         solved = self.cube.is_solved()
@@ -116,8 +116,9 @@ class Rubik2x2Env(gym.Env):
     # --------------------------------------------------------------
 
     def _get_obs(self):
-        """Returns the cube state as float32 tensor-ready array."""
-        return self.cube.flatten().astype(np.float32)
+        flat = self.cube.state.flatten().astype(int)
+        one_hot = np.eye(6, dtype=np.float32)[flat]  # (24,6)
+        return one_hot.flatten()  # (144,)
 
     def _update_scramble_difficulty(self):
         """Handles dynamic scramble progression."""
