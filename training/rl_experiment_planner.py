@@ -9,16 +9,16 @@ def generate_experiments():
     """Creates a list of all parameter combinations."""
     grid = {
         "reward_mode": ["bottom_layer_corners", "bottom_layer"],
-        "scramble_min": [8],
+        "scramble_min": [1],
         "scramble_max": [12],
-        "resets_per_jump": [80000],
-        "total_steps": [100000000],
+        "resets_per_jump": [100000],
+        "total_steps": [1000000],
         "max_steps": [10],
-        "batch_size": [64],
+        "batch_size": [64], # 128 for more stable results
         "lr": [1e-4], # To test
         "gamma": [0.99], # To test
         "epsilon_start": [1.0],
-        "epsilon_end": [0.25, 0.15, 0.05], # 0.25, 0.05 works good
+        "epsilon_end": [0.05, 0.15, 0.05], # 0.25, 0.05 works good
         "epsilon_decay": [0.99995, 0.999995], # 0.99995, 0.999995 works good
         "device": ["cuda" if torch.cuda.is_available() else "cpu"],
     }
