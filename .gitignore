@@ -1,0 +1,10 @@
+**/__pycache__/
+
+training/train_il.py
+training/train_multi_paradigm.py
+callbacks/
+datasets/
+experiments/
+mlruns/
+models/
+scripts/
