@@ -12,14 +12,14 @@ def generate_experiments():
         "scramble_min": [1],
         "scramble_max": [11],
         "resets_per_jump": [100000],
-        "total_steps": [100000000],
+        "total_steps": [1500000],
         "max_steps": [11],
         "batch_size": [256], # 128 for more stable results
         "lr": [1e-4], # To test
         "gamma": [0.99], # To test
-        "epsilon_start": [0.75],
+        "epsilon_start": [1.0],
         "epsilon_end": [0.05], # 0.25, 0.05 works good
-        "epsilon_decay": [0.9995], # 0.99995, 0.999995 works good
+        "epsilon_decay": [0.99997], # 0.99995, 0.999995 works good
         "device": ["cuda" if torch.cuda.is_available() else "cpu"],
     }
 

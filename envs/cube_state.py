@@ -21,54 +21,55 @@ class Cube2x2:
         self.neighbors = {
             0: ([2, 5, 3, 4], [[0,1],[0,1],[0,1],[0,1]]),  # Up: F, R, B, L
             1: ([2, 4, 3, 5], [[2,3],[2,3],[2,3],[2,3]]),  # Down: F, L, B, R
-            2: ([0, 5, 1, 4], [[2,3],[0,2],[0,1],[1,3]]),  # Front: U, R, D, L
-            3: ([0, 4, 1, 5], [[0,1],[0,2],[2,3],[1,3]]),  # Back: U, L, D, R
+            2: ([0, 5, 1, 4], [[2,3],[0,2],[1,0],[3,1]]),  # Front: U, R, D, L
+            3: ([0, 4, 1, 5], [[0,1],[2,0],[3,2],[1,3]]),  # Back: U, L, D, R
             4: ([0, 2, 1, 3], [[0,2],[0,2],[0,2],[3,1]]),  # Left: U, F, D, B
-            5: ([0, 3, 1, 2], [[1,3],[0,2],[1,3],[3,1]]),  # Right: U, B, D, F
+            5: ([0, 3, 1, 2], [[1,3],[2,0],[1,3],[1,3]]),  # Right: U, B, D, F
         }
 
     def reset(self):
         for i in range(6):
             self.state[i] = i
 
-    def scramble(self, n=10, seed=None):
-        """
-        Randomly scrambles the cube in n moves.
-        Ensures the first move does NOT rotate the upper (U) face,
-        since the agent focuses only on the bottom layer.
-        Now includes 180° turns.
-        """
+    def scramble(self, n=10, seed=None, debug=False, max_attempts=20):
         if seed is not None:
             random.seed(seed)
 
-        performed_moves = []
-        last_face = None
+        for attempt in range(max_attempts):
+            original_state = self.state.copy()
+            performed_moves = []
+            last_face = None
 
-        for move_idx in range(n):
-            # If this is the first move — avoid the upper face (face 0)
-            if move_idx == 0:
-                possible_faces = [1, 2, 3, 4, 5]
+            for move_idx in range(n):
+                possible_faces = [0,1,2,3,4,5]
+                if last_face is not None and last_face in possible_faces:
+                    possible_faces.remove(last_face)
+
+                face_id = random.choice(possible_faces)
+                direction = random.choice(["CW","CCW","180"])
+                if direction == "CW":
+                    self.rotate_cw(face_id)
+                elif direction == "CCW":
+                    self.rotate_ccw(face_id)
+                else:
+                    self.rotate_180(face_id)
+
+                performed_moves.append((face_id,direction))
+                last_face = face_id
+
+                if debug:
+                    from envs.render_utils import render_cube_ascii
+                    print(f"Move {move_idx+1}/{n}: face={face_id}, dir={direction}")
+                    print(render_cube_ascii(self.state))
+                    print("-"*30)
+
+            if not self.is_solved():
+                return performed_moves
             else:
-                possible_faces = [0, 1, 2, 3, 4, 5]
+                self.state = original_state.copy()
 
-            # Avoid repeating the same face twice in a row
-            if last_face is not None and last_face in possible_faces:
-                possible_faces.remove(last_face)
-
-            face_id = random.choice(possible_faces)
-            direction = random.choice(["CW", "CCW", "180"])  # now includes 180° turn
-
-            if direction == "CW":
-                self.rotate_cw(face_id)
-            elif direction == "CCW":
-                self.rotate_ccw(face_id)
-            else:
-                self.rotate_180(face_id)
-
-            performed_moves.append((face_id, direction))
-            last_face = face_id
-
-        return performed_moves
+        print("[WARN] Scramble failed to change state after multiple attempts!")
+        return []
 
     def rotate_cw(self, face_id):
         """Clockwise rotation of the given face, including neighboring sides."""

@@ -5,7 +5,7 @@ from .reward_helpers import (
 )
 
 def compute_reward(cube, solved, action, prev_face_id=None, mode="basic", current_scramble=1, scramble_max=5, prev_correct_corners=None):
-    BONUS_FULL = 5.0  # large bonus for fully achieving the goal
+    BONUS_FULL = 25.0  # large bonus for fully achieving the goal
     face_id = action % 6
     direction = action // 6  # 0=CW, 1=CCW, 2=180
 
@@ -43,12 +43,12 @@ def compute_reward(cube, solved, action, prev_face_id=None, mode="basic", curren
         reward -= 0.03 * (1 + 0.1 * current_scramble)
 
         # --- Penalty for U/D ---
-        if face_id in [0, 1]:
-            reward -= 0.01
+        #if face_id in [0, 1]:
+        #    reward -= 0.01
 
         # --- Penalty for repeating the same wall ---
-        if prev_face_id is not None and prev_face_id == face_id:
-            reward -= 0.5
+        #if prev_face_id is not None and prev_face_id == face_id:
+        #    reward -= 0.5
 
         # --- A small penalty for the length of the trajectory ---
         if reward > 0:

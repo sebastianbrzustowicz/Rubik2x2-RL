@@ -91,6 +91,12 @@ class Rubik2x2Env(gym.Env):
         face_id = action % 6
         direction = action // 6  # 0=CW, 1=CCW, 2=180
 
+        if self.prev_face_id is not None and self.prev_face_id == face_id:
+            possible_faces = [i for i in range(6) if i != self.prev_face_id]
+            new_face_id = random.choice(possible_faces)
+            face_id = new_face_id
+            action = face_id + direction * 6
+
         if direction == 0:
             self.cube.rotate_cw(face_id)
         elif direction == 1:
@@ -123,9 +129,9 @@ class Rubik2x2Env(gym.Env):
         return obs, reward, terminated, truncated, info
 
     def _get_obs(self):
-        flat = self.cube.state.flatten().astype(int)
+        flat = np.array(self.cube.state).flatten().astype(int)
         one_hot = np.eye(6, dtype=np.float32)[flat]  # (24,6)
-        return one_hot.flatten()  # (144,)
+        return one_hot.flatten()
 
     def _update_scramble_difficulty(self):
         if len(self.level_success_history) >= self.adaptive_scramble_window:

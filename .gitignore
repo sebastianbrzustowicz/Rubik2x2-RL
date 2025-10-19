@@ -7,4 +7,6 @@ datasets/
 experiments/
 mlruns/
 models/
-scripts/
+scripts/analyze_results.py
+scripts/generate_demonstrations.py
+main.py
