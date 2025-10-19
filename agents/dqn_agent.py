@@ -24,6 +24,7 @@ class DQNAgent:
         self.device = device
         self.gamma = gamma
         self.epsilon = epsilon_start
+        self.epsilon_start = epsilon_start
         self.epsilon_min = epsilon_end
         self.epsilon_decay = epsilon_decay
         self.batch_size = batch_size
@@ -46,6 +47,8 @@ class DQNAgent:
         self.fail_count = 0
         self.episode_rewards = []
         self.last_window_results = deque(maxlen=1000)
+
+        self.prev_scramble_length = env.current_scramble
 
     def select_action(self, state):
         if np.random.rand() < self.epsilon:
@@ -82,6 +85,7 @@ class DQNAgent:
     def train(self, total_steps=100_000, log_every=10000, update_freq=4):
         state, _ = self.env.reset()
         episode_reward = 0
+        self.prev_scramble_length = self.env.current_scramble  # track for epsilon reset
 
         for step in range(total_steps):
             self.global_step = step
@@ -97,24 +101,35 @@ class DQNAgent:
             episode_reward += reward
 
             if done:
+                # Reset environment and pass success + scramble length
+                state, _ = self.env.reset(
+                    last_solved=terminated,
+                    last_scramble=self.env.current_scramble
+                )
+
+                # Reset epsilon only if scramble level increased
+                current_scramble = self.env.current_scramble
+                if self.env.current_scramble > self.prev_scramble_length:
+                    self.epsilon = max(0.2, self.epsilon_start)
+                self.prev_scramble_length = current_scramble
+
                 self.episode_rewards.append(episode_reward)
-                
-                if info.get("solved", False):
+                episode_reward = 0
+
+                # Track successes for logging
+                if terminated:
                     self.success_count += 1
                     self.last_window_results.append(1)
                 else:
                     self.fail_count += 1
                     self.last_window_results.append(0)
 
-                episode_reward = 0
-                state, _ = self.env.reset()
-
+            # Epsilon decay per step
             self.epsilon = max(self.epsilon * self.epsilon_decay, self.epsilon_min)
 
-            # Update every `update_freq` steps
+            # Update networks
             if step % update_freq == 0 and len(self.replay_buffer) >= self.batch_size:
                 self.update()
-
             if step % self.target_update_freq == 0:
                 self.target_net.load_state_dict(self.q_net.state_dict())
 

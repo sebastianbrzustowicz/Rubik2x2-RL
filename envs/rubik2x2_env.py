@@ -4,16 +4,9 @@ import numpy as np
 from .cube_state import Cube2x2
 from .rewards.reward_interface import compute_reward
 from .render_utils import render_cube_ascii
+import random 
 
 class Rubik2x2Env(gym.Env):
-    """
-    PyTorch-friendly 2x2 Rubik’s Cube environment.
-
-    - Observation: 24-element flattened array (6 faces × 4 stickers)
-    - Action space: 12 discrete actions (6 faces × 2 directions)
-    - Reward: depends on reward_mode (via compute_reward)
-    - Supports gradual or weighted scramble growth
-    """
 
     metadata = {"render_modes": ["human", "ansi"]}
 
@@ -55,28 +48,43 @@ class Rubik2x2Env(gym.Env):
             low=0.0, high=5.0, shape=(24 * 6,), dtype=np.float32
         )
 
-    # --------------------------------------------------------------
-    # Core Gym API
-    # --------------------------------------------------------------
+        self.level_success_history = []  # success history for current scramble
+        self.adaptive_scramble_threshold = 0.7
+        self.adaptive_scramble_window = 2000
+        self.easy_scramble_prob = 0.1
 
-    def reset(self, *, seed=None, options=None):
+        self.prev_face_id = None
+        self.prev_correct_corners = set()
+
+
+    def reset(self, *, seed=None, options=None, last_solved=None, last_scramble=None):
         super().reset(seed=seed)
         self.cube.reset()
         self.current_step = 0
         self.total_resets += 1
+        self.prev_face_id = None
 
-        # Scramble difficulty growth
-        self._update_scramble_difficulty()
+        # Update level success history only for FULL scrambles
+        if last_solved is not None and last_scramble == self.current_scramble:
+            self.level_success_history.append(int(last_solved))
+            if len(self.level_success_history) > self.adaptive_scramble_window:
+                self.level_success_history.pop(0)
+            self._update_scramble_difficulty()
+
+        # e.g., 50% for the base level, 25% for -1, 25% for +1
+        choices = [self.current_scramble - 1, self.current_scramble, self.current_scramble + 1]
+        weights = [0.25, 0.5, 0.25]
+        scramble_length = int(np.clip(random.choices(choices, weights=weights)[0], self.scramble_min, self.scramble_max))
 
         # Scramble until unsolved
         while True:
             self.cube.reset()
-            self.cube.scramble(self.current_scramble)
+            self.cube.scramble(scramble_length)
             if not self.cube.is_solved():
                 break
 
         obs = self._get_obs()
-        info = {"current_scramble": self.current_scramble}
+        info = {"current_scramble": scramble_length}
         return obs, info
 
     def step(self, action: int):
@@ -94,7 +102,10 @@ class Rubik2x2Env(gym.Env):
         solved = self.cube.is_solved()
 
         # Reward calculation
-        reward = float(compute_reward(self.cube, solved, self.reward_mode))
+        reward, current_correct = compute_reward(self.cube, solved, action, self.prev_face_id, self.reward_mode, self.current_scramble, self.scramble_max, prev_correct_corners=self.prev_correct_corners)
+
+        self.prev_face_id = face_id
+        self.prev_correct_corners = current_correct
 
         # Termination conditions
         terminated = solved
@@ -111,30 +122,19 @@ class Rubik2x2Env(gym.Env):
 
         return obs, reward, terminated, truncated, info
 
-    # --------------------------------------------------------------
-    # Internal helpers
-    # --------------------------------------------------------------
-
     def _get_obs(self):
         flat = self.cube.state.flatten().astype(int)
         one_hot = np.eye(6, dtype=np.float32)[flat]  # (24,6)
         return one_hot.flatten()  # (144,)
 
     def _update_scramble_difficulty(self):
-        """Handles dynamic scramble progression."""
-        if self.scramble_mode == "gradual":
-            if self.total_resets % self.resets_per_jump == 0:
-                self.current_scramble = min(
-                    self.current_scramble + self.scramble_jump, self.scramble_max
-                )
-
-        elif self.scramble_mode == "weighted":
-            if self.level_resets_count >= self.resets_per_jump * self.current_scramble:
-                self.current_scramble = min(
-                    self.current_scramble + 1, self.scramble_max
-                )
-                self.level_resets_count = 0
-            self.level_resets_count += 1
+        if len(self.level_success_history) >= self.adaptive_scramble_window:
+            avg_success = np.mean(self.level_success_history[-self.adaptive_scramble_window:])
+            if avg_success >= self.adaptive_scramble_threshold:
+                # Increase scramble level
+                self.current_scramble = min(self.current_scramble + 1, self.scramble_max)
+                # Reset history for new level
+                self.level_success_history = []
 
     def render(self):
         text = render_cube_ascii(self.cube.state)
