@@ -13,7 +13,6 @@ def evaluate_model(
     max_steps=20,
     device="cuda",
 ):
-    # Tworzymy jedno środowisko
     env = Rubik2x2Env(
         max_steps=max_steps,
         reward_mode="bottom_layer_corners",
@@ -34,13 +33,11 @@ def evaluate_model(
     for scramble_len in range(scramble_min, scramble_max + 1):
         print(f"\n--- SCRAMBLE LENGTH: {scramble_len} ---")
 
-        # Resetujemy wszystkie zmienne środowiska przed nowym scramblem
         env.current_step = 0
         env.prev_face_id = None
         env.prev_correct_corners = set()
         env.cube.reset()
 
-        # Wygeneruj scramble, aż nie będzie ułożony
         scramble_moves = []
         while True:
             scramble_moves = env.cube.scramble(scramble_len, seed=random.randint(0, 10000))
