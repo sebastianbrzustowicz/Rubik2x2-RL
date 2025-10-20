@@ -5,6 +5,7 @@ from .cube_state import Cube2x2
 from .rewards.reward_interface import compute_reward
 from .render_utils import render_cube_ascii
 import random 
+import copy
 
 class Rubik2x2Env(gym.Env):
 
@@ -64,6 +65,8 @@ class Rubik2x2Env(gym.Env):
         self.total_resets += 1
         self.prev_face_id = None
 
+        self.prev_cube = copy.deepcopy(self.cube)
+
         # Update level success history only for FULL scrambles
         if last_solved is not None and last_scramble == self.current_scramble:
             self.level_success_history.append(int(last_solved))
@@ -71,7 +74,7 @@ class Rubik2x2Env(gym.Env):
                 self.level_success_history.pop(0)
             self._update_scramble_difficulty()
 
-        # e.g., 50% for the base level, 25% for -1, 25% for +1
+        # Selecting scramble len
         choices = [self.current_scramble - 1, self.current_scramble, self.current_scramble + 1]
         weights = [0.25, 0.5, 0.25]
         scramble_length = int(np.clip(random.choices(choices, weights=weights)[0], self.scramble_min, self.scramble_max))
@@ -97,6 +100,9 @@ class Rubik2x2Env(gym.Env):
             face_id = new_face_id
             action = face_id + direction * 6
 
+        # Make a copy of the previous state of the cube
+        self.prev_cube = self.cube.copy()
+
         if direction == 0:
             self.cube.rotate_cw(face_id)
         elif direction == 1:
@@ -107,8 +113,18 @@ class Rubik2x2Env(gym.Env):
         self.current_step += 1
         solved = self.cube.is_solved()
 
-        # Reward calculation
-        reward, current_correct = compute_reward(self.cube, solved, action, self.prev_face_id, self.reward_mode, self.current_scramble, self.scramble_max, prev_correct_corners=self.prev_correct_corners)
+        # Reward calculation z prev_cube
+        reward, current_correct = compute_reward(
+            cube=self.cube,
+            solved=solved,
+            action=action,
+            prev_cube=self.prev_cube,
+            prev_face_id=self.prev_face_id,
+            mode=self.reward_mode,
+            current_scramble=self.current_scramble,
+            scramble_max=self.scramble_max,
+            prev_correct_corners=self.prev_correct_corners
+        )
 
         self.prev_face_id = face_id
         self.prev_correct_corners = current_correct

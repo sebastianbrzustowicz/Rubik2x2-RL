@@ -4,21 +4,29 @@ from .reward_helpers import (
     is_bottom_layer_solved
 )
 
-def compute_reward(cube, solved, action, prev_face_id=None, mode="basic", current_scramble=1, scramble_max=5, prev_correct_corners=None):
-    BONUS_FULL = 25.0  # large bonus for fully achieving the goal
+def compute_reward(
+    cube, solved, action, prev_cube=None, prev_face_id=None,
+    mode="basic", current_scramble=1, scramble_max=5,
+    prev_correct_corners=None
+):
+    BONUS_FULL = 50.0
     face_id = action % 6
-    direction = action // 6  # 0=CW, 1=CCW, 2=180
+    direction = action // 6
 
-    # --- Exponential difficulty factor ---
     scramble_factor = np.exp(0.25 * current_scramble) / np.exp(0.25 * scramble_max)
 
+    scramble_factor = np.exp(0.25 * current_scramble) / np.exp(0.25 * scramble_max)
+    # --- Additional factor for penalties: grows slower than scramble_factor ---
+    penalty_scale = 1.0 + 0.5 * (current_scramble / scramble_max) ** 1.5
+
+    reward = 0.0
+
     if mode == "bottom_layer_corners":
-        reward = 0.0
         corners = [
-            (0, (2, 2), (4, 3)),  # corner 0
-            (1, (2, 3), (5, 2)),  # corner 1
-            (2, (3, 3), (4, 2)),  # corner 2
-            (3, (3, 2), (5, 3)),  # corner 3
+            (0, (2, 2), (4, 3)),
+            (1, (2, 3), (5, 2)),
+            (2, (3, 3), (4, 2)),
+            (3, (3, 2), (5, 3)),
         ]
 
         current_correct = set()
@@ -28,33 +36,54 @@ def compute_reward(cube, solved, action, prev_face_id=None, mode="basic", curren
                 cube.state[side1_id][side1_idx] == side1_id and
                 cube.state[side2_id][side2_idx] == side2_id
             ):
-                reward += 0.1 * scramble_factor
                 current_correct.add(idx)
 
-        # --- Penalty for spoiling previously correct corners ---
-        if prev_correct_corners is not None:
-            lost_corners = prev_correct_corners - current_correct
-            reward -= 0.3 * len(lost_corners)  # duża kara
+        n_correct = len(current_correct)
+        n_prev = len(prev_correct_corners or set())
+        delta = n_correct - n_prev
 
+        # --- Progress reward ---
+        if delta > 0:
+            reward += 1.0 * delta * scramble_factor
+        # --- Penalty for losing correct corners ---
+        elif delta < 0:
+            reward -= 0.4 * abs(delta) * penalty_scale
+
+        # --- Base reward proportional to current progress ---
+        reward += 0.1 * n_correct * scramble_factor
+
+        # --- Bonus for complete solution ---
         if solved:
             reward += BONUS_FULL * scramble_factor
 
-        # --- Penalty depending on the length of the scramble ---
-        reward -= 0.03 * (1 + 0.1 * current_scramble)
+        # --- Additional reward for a simple D move if the bottom layer was complete ---
+        if prev_cube is not None:
+            prev_bottom_complete = all(
+                prev_cube.state[1][i] == 1 for i in range(4)
+            )
+            curr_bottom_correct = all(
+                cube.state[1][i] == 1 for i in range(4)
+            )
+            # Additionally, we check whether the bottom stickers on the front side have the correct colors
+            front_bottom_correct = cube.state[2][2] == 2 and cube.state[2][3] == 2
+            if prev_bottom_complete and curr_bottom_correct and front_bottom_correct and face_id == 1:  # D
+                reward += 0.5 * scramble_factor  # bonus for a simple move
 
-        # --- Penalty for U/D ---
-        #if face_id in [0, 1]:
-        #    reward -= 0.01
+        # --- Penalty for pointless D/U movements if nothing changes ---
+        if face_id in [0, 1] and delta == 0:
+            reward -= 0.02 * penalty_scale
 
-        # --- Penalty for repeating the same wall ---
-        #if prev_face_id is not None and prev_face_id == face_id:
-        #    reward -= 0.5
+        # --- Penalty for destroying correct corners by D/U ---
+        if (
+            prev_correct_corners
+            and n_correct < len(prev_correct_corners)
+            and face_id in [0, 1]
+        ):
+            reward -= 0.5 * penalty_scale
 
-        # --- A small penalty for the length of the trajectory ---
-        if reward > 0:
-            reward *= 0.99
-        else:
-            reward *= 1.01
+        # --- Penalty for stagnation ---
+        if delta == 0 and not solved:
+            reward -= 0.01 * penalty_scale * (1 + 0.1 * current_scramble)
 
         return reward, current_correct
 

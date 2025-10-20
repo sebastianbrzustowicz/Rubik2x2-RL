@@ -1,7 +1,7 @@
 import numpy as np
 
 class ReplayBuffer:
-    def __init__(self, state_dim=144, capacity=100_000):
+    def __init__(self, state_dim=144, capacity=1_000_000):
         self.capacity = capacity
         self.state_dim = state_dim
         self.ptr = 0

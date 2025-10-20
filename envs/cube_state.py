@@ -121,3 +121,8 @@ class Cube2x2:
     def flatten(self, normalize=True):
         flat = self.state.flatten()
         return flat / 5.0 if normalize else flat
+
+    def copy(self):
+        new_cube = Cube2x2()
+        new_cube.state = [face.copy() for face in self.state]
+        return new_cube

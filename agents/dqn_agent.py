@@ -160,13 +160,16 @@ class DQNAgent:
                     max_scramble = self.env.scramble_max
                     scramble_ratio = (current_scramble - min_scramble) / max(1, max_scramble - min_scramble)
 
-                    # exponential increase in decay
-                    exponent = 5.0  # exp. factor
-                    self.epsilon_decay = self.epsilon_decay + (1.0 - self.epsilon_decay) * (scramble_ratio ** exponent)
+                    base_decay = self.epsilon_decay  # we store the decay value in the startup agent
+                    scale = 1.08  # 1.08 was suitable
 
-                    # limit to 0.9999...
+                    # exponential increase: decay increases towards 1 for larger scrambles
+                    self.epsilon_decay = base_decay + (1.0 - base_decay) * (scramble_ratio ** scale)
+
+                    # safety
                     self.epsilon_decay = min(self.epsilon_decay, 0.99999999999)
                     self.epsilon = max(0.2, self.epsilon_start)
+                    print(f"Current scramble: {current_scramble}, epsilon_decay: {self.epsilon_decay:.10f}")
                 self.prev_scramble_length = current_scramble
 
                 # bookkeeping

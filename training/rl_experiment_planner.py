@@ -10,9 +10,9 @@ def generate_experiments():
     grid = {
         "reward_mode": ["bottom_layer_corners",],
         "scramble_min": [1],
-        "scramble_max": [11],
+        "scramble_max": [30],
         "resets_per_jump": [100000],
-        "total_steps": [1500000],
+        "total_steps": [20000000],
         "max_steps": [11],
         "batch_size": [256], # 128 for more stable results
         "lr": [1e-4], # To test
