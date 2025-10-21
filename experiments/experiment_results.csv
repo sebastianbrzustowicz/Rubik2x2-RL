@@ -1,0 +1,2 @@
+reward_mode,scramble_min,scramble_max,total_steps,device,duration_sec,model_path
+bottom_layer_corners,1,35,100000,20000000,11,256,0.0001,0.99,1.0,0.05,0.99997,cuda,models/rl_agent.pth,6675.36

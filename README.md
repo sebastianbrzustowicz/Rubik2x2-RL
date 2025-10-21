@@ -2,7 +2,7 @@
 **Rubik-RL** is a reinforcement learning project focused on solving the 2x2 Rubik's Cube.  
 
 The project includes:
-- Reward systems with multiple modes (e.g., "basic", "bottom_layer_corners", "bottom_face", "bottom_layer").  
+- Reward systems with multiple reasonable modes (e.g., "bottom_layer_corners", "bottom_layer", "basic").  
 - Custom environment for the Rubik2x2 cube.  
 - Scripts for training, evaluating, and running experiments.
 - MLflow integration for tracking experiments and metrics.  
