@@ -4,7 +4,5 @@ training/train_multi_paradigm.py
 callbacks/
 mlruns/
 models/
-envs/lbl_solver.py
-scripts/eval_il_lbl.py
 scripts/analyze_results.py
 main.py
