@@ -1,11 +1,10 @@
 **/__pycache__/
 
-training/train_il.py
 training/train_multi_paradigm.py
 callbacks/
-datasets/
 mlruns/
 models/
+envs/lbl_solver.py
+scripts/eval_il_lbl.py
 scripts/analyze_results.py
-scripts/generate_demonstrations.py
 main.py
