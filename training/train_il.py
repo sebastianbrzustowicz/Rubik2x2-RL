@@ -6,15 +6,17 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from envs.rubik2x2_env import Rubik2x2Env
+from envs.render_utils import render_cube_ascii
 
 # ===== Dataset =====
 class ILDataset(Dataset):
-    def __init__(self, algo_file):
+    def __init__(self, algo_file, debug=False):
         with open(algo_file, "r") as f:
             self.algorithms = json.load(f)
         self.env = Rubik2x2Env()
         self.data = []
         self.labels = []
+        self.debug = debug
         self._generate_samples()
 
     def _generate_samples(self):
@@ -29,7 +31,15 @@ class ILDataset(Dataset):
 
         for algo_id, (name, moves) in enumerate(self.algorithms.items()):
             self.env.cube.reset()
-            # Apply reversed algorithm to get unique pattern
+
+            if self.debug and algo_id < 1:
+                print(f"\n=== Algorithm ID: {algo_id} ===")
+                print(f"Name: {name}")
+                print(f"Original moves: {moves}")
+                print("Cube state BEFORE applying reversed algorithm:")
+                print(render_cube_ascii(self.env.cube.state))
+
+            reversed_moves = []
             for move in reversed(moves):
                 if move.endswith("2"):
                     inv = move
@@ -37,6 +47,7 @@ class ILDataset(Dataset):
                     inv = move[:-1]
                 else:
                     inv = move + "'"
+                reversed_moves.append(inv)
                 face, direction = MOVE_MAP[inv]
                 if direction == 0:
                     self.env.cube.rotate_cw(face)
@@ -49,8 +60,10 @@ class ILDataset(Dataset):
             self.data.append(obs)
             self.labels.append(algo_id)
 
-        self.data = np.array(self.data, dtype=np.int64)
-        self.labels = np.array(self.labels, dtype=np.int64)
+            if self.debug and algo_id < 1:
+                print(f"Reversed moves applied: {reversed_moves}")
+                print("Cube state AFTER applying reversed algorithm:")
+                print(render_cube_ascii(self.env.cube.state))
 
     def __len__(self):
         return len(self.data)
@@ -63,7 +76,7 @@ class ILDataset(Dataset):
 
 # ===== Model =====
 class ILClassifier(nn.Module):
-    def __init__(self, input_dim=144, hidden_dim=256, num_classes=20):
+    def __init__(self, input_dim=144, hidden_dim=512, num_classes=20):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
@@ -97,12 +110,12 @@ def train(model, dataloader, epochs=100, lr=1e-3):
 
 
 if __name__ == "__main__":
-    DATASET_PATH = "datasets/upper_layer_algorithms.json"
-    dataset = ILDataset(DATASET_PATH)
-    loader = DataLoader(dataset, batch_size=8, shuffle=True)
+    DATASET_PATH = "datasets/upper_layer_algorithms_full.json"
+    dataset = ILDataset(DATASET_PATH, debug=True)
+    loader = DataLoader(dataset, batch_size=len(dataset), shuffle=True)
 
     model = ILClassifier(input_dim=144, num_classes=len(dataset.algorithms))
-    train(model, loader, epochs=50, lr=1e-3)
+    train(model, loader, epochs=100, lr=1e-3)
 
     os.makedirs("models", exist_ok=True)
     torch.save(model.state_dict(), "models/il_classifier.pth")

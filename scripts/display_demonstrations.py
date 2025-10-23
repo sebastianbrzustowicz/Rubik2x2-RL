@@ -4,7 +4,7 @@ from envs.render_utils import render_cube_ascii
 
 DATASET_DIR = "datasets"
 DEMO_FILE = os.path.join(DATASET_DIR, "demonstrations.json")
-ALGO_FILE = os.path.join(DATASET_DIR, "upper_layer_algorithms.json")
+ALGO_FILE = os.path.join(DATASET_DIR, "upper_layer_algorithms_full.json")
 
 # Load data
 with open(DEMO_FILE, "r") as f:

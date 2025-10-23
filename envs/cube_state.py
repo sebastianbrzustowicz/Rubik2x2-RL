@@ -117,7 +117,10 @@ class Cube2x2:
         front_bottom_correct = front_face[2] == 2 and front_face[3] == 2
 
         return bottom_correct and front_bottom_correct
-
+    
+    def is_entire_cube_solved(self) -> bool:
+        """Check if the entire cube is solved (all faces uniform)."""
+        return all(np.all(self.state[face] == self.state[face][0]) for face in range(6))
     def flatten(self, normalize=True):
         flat = self.state.flatten()
         return flat / 5.0 if normalize else flat

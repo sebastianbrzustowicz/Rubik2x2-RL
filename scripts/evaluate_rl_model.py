@@ -1,5 +1,3 @@
-import torch
-import numpy as np
 from envs.rubik2x2_env import Rubik2x2Env
 from agents.dqn_agent import DQNAgent
 from envs.render_utils import render_cube_ascii

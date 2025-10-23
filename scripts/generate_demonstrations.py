@@ -4,7 +4,7 @@ import copy
 from envs.rubik2x2_env import Rubik2x2Env
 
 DATASET_DIR = "datasets"
-ALGO_FILE = os.path.join(DATASET_DIR, "upper_layer_algorithms.json")
+ALGO_FILE = os.path.join(DATASET_DIR, "upper_layer_algorithms_full.json")
 OUTPUT_FILE = os.path.join(DATASET_DIR, "demonstrations.json")
 
 os.makedirs(DATASET_DIR, exist_ok=True)
