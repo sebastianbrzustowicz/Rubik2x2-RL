@@ -5,6 +5,7 @@ import torch
 from .q_network import QNetwork
 from .replay_buffer import ReplayBuffer
 from collections import deque
+import os
 
 class DQNAgent:
     def __init__(
@@ -18,23 +19,25 @@ class DQNAgent:
         batch_size=64,
         target_update_freq=1000,
         device="cuda",
-        use_mlflow=False
+        use_mlflow=False,
+        model_path="models/rl_agent.pth",
+        update_epsilon=False
     ):
         self.env = env
         self.device = device
         self.gamma = gamma
+        self.model_path = model_path
 
-        # epsilon parameters
         self.epsilon_start = epsilon_start
         self.epsilon = epsilon_start
         self.epsilon_min = epsilon_end
         self.epsilon_decay = epsilon_decay
+        self.update_epsilon = update_epsilon
 
         self.batch_size = batch_size
         self.target_update_freq = target_update_freq
         self.use_mlflow = use_mlflow
 
-        # networks
         obs_dim = env.observation_space.shape[0]
         act_dim = env.action_space.n
         self.q_net = QNetwork(obs_dim, 256, act_dim).to(device)
@@ -44,14 +47,12 @@ class DQNAgent:
         self.optimizer = torch.optim.Adam(self.q_net.parameters(), lr=lr)
         self.replay_buffer = ReplayBuffer()
 
-        # statistics
         self.global_step = 0
         self.success_count = 0
         self.fail_count = 0
         self.episode_rewards = []
         self.last_window_results = deque(maxlen=1000)
 
-        # previous face id to forbid repeating same-face moves
         self.prev_face_id = None
 
     def select_action(self, state, explore=True):
@@ -63,33 +64,26 @@ class DQNAgent:
         num_actions = self.env.action_space.n
         all_actions = np.arange(num_actions)
 
-        # compute mask of allowed actions (True = allowed)
         if self.prev_face_id is None:
             allowed_mask = np.ones(num_actions, dtype=bool)
         else:
-            # forbid any action whose face_id equals prev_face_id
             forbidden_faces = self.prev_face_id
             allowed_mask = (all_actions % 6) != forbidden_faces
 
-        # if exploring and random chance triggers
         do_random = explore and (np.random.rand() < self.epsilon)
         if do_random:
             allowed_actions = all_actions[allowed_mask]
             if allowed_actions.size == 0:
-                # fallback: if somehow none allowed, allow all (shouldn't happen)
                 allowed_actions = all_actions
             return int(np.random.choice(allowed_actions))
 
-        # greedy selection with masking
         with torch.no_grad():
             state_t = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            q_values = self.q_net(state_t).cpu().numpy().ravel()  # shape (num_actions,)
+            q_values = self.q_net(state_t).cpu().numpy().ravel()
 
         if allowed_mask.sum() == 0:
-            # fallback: pick argmax overall
             return int(int(np.argmax(q_values)))
 
-        # mask forbidden actions by setting them to a very low value
         masked_q = q_values.copy()
         masked_q[~allowed_mask] = -1e9
         action = int(int(np.argmax(masked_q)))
@@ -122,57 +116,54 @@ class DQNAgent:
     def train(self, total_steps=100_000, log_every=10000, update_freq=4):
         state, _ = self.env.reset()
         episode_reward = 0
-        self.prev_scramble_length = self.env.current_scramble  # for epsilon reset when scramble increases
+        self.prev_scramble_length = self.env.current_scramble
+        best_success_rate = 0.0 
+        best_scramble_len = 0
+        episodes_in_current_scramble_len = 0
+        step = 0
 
-        for step in range(total_steps):
+        while True:
             self.global_step = step
+            step += 1
 
-            # select action (epsilon-greedy) — select_action enforces same-face ban
             action = self.select_action(state, explore=True)
 
-            # step env
             next_state, reward, terminated, truncated, info = self.env.step(action)
             done = terminated or truncated
 
-            # push transition
             self.replay_buffer.push(state, action, reward, next_state, done)
 
-            # remember prev face id to forbid repeating
             self.prev_face_id = (action % 6)
 
             state = next_state
             episode_reward += reward
 
             if done:
-                # Reset environment and pass success + scramble length (so env can adapt)
-                # Note: env.reset signature in your code supports last_solved/last_scramble
                 last_solved = terminated
                 last_scramble = self.env.current_scramble
                 state, _ = self.env.reset(last_solved=last_solved, last_scramble=last_scramble)
+                episodes_in_current_scramble_len += 1
 
-                # Reset prev_face_id when new episode begins
                 self.prev_face_id = None
 
-                # Reset epsilon only if scramble level increased
                 current_scramble = self.env.current_scramble
                 if current_scramble > self.prev_scramble_length:
-                    min_scramble = self.env.scramble_min
-                    max_scramble = self.env.scramble_max
-                    scramble_ratio = (current_scramble - min_scramble) / max(1, max_scramble - min_scramble)
+                    episodes_in_current_scramble_len = 0
+                    if self.update_epsilon:
+                        min_scramble = self.env.scramble_min
+                        max_scramble = self.env.scramble_max
+                        scramble_ratio = (current_scramble - min_scramble) / max(1, max_scramble - min_scramble)
 
-                    base_decay = self.epsilon_decay  # we store the decay value in the startup agent
-                    scale = 1.08  # 1.08 was suitable
+                        base_decay = self.epsilon_decay
+                        scale = 1.05
 
-                    # exponential increase: decay increases towards 1 for larger scrambles
-                    self.epsilon_decay = base_decay + (1.0 - base_decay) * (scramble_ratio ** scale)
+                        self.epsilon_decay = base_decay + (1.0 - base_decay) * (scramble_ratio ** scale)
 
-                    # safety
-                    self.epsilon_decay = min(self.epsilon_decay, 0.99999999999)
-                    self.epsilon = max(0.2, self.epsilon_start)
-                    print(f"Current scramble: {current_scramble}, epsilon_decay: {self.epsilon_decay:.10f}")
+                        self.epsilon_decay = min(self.epsilon_decay, 0.9999982)
+                        self.epsilon = max(0.2, self.epsilon_start)
+                        print(f"Current scramble: {current_scramble}, epsilon_decay: {self.epsilon_decay:.10f}")
                 self.prev_scramble_length = current_scramble
 
-                # bookkeeping
                 self.episode_rewards.append(episode_reward)
                 episode_reward = 0
 
@@ -183,21 +174,27 @@ class DQNAgent:
                     self.fail_count += 1
                     self.last_window_results.append(0)
 
-            # epsilon decay per step
             self.epsilon = max(self.epsilon * self.epsilon_decay, self.epsilon_min)
 
-            # update networks
             if step % update_freq == 0 and len(self.replay_buffer) >= self.batch_size:
                 self.update()
             if step % self.target_update_freq == 0:
                 self.target_net.load_state_dict(self.q_net.state_dict())
 
-            # Log every log_every steps
             if self.use_mlflow and step % log_every == 0 and step > 0:
                 avg_reward = np.mean(self.episode_rewards[-20:]) if self.episode_rewards else 0.0
                 total_episodes = self.success_count + self.fail_count
                 success_rate = np.mean(self.last_window_results) if self.last_window_results else 0.0
                 max_reward = np.max(self.episode_rewards[-100:]) if self.episode_rewards else 0.0
+
+                if ((current_scramble > best_scramble_len and success_rate > (best_success_rate - 0.25)) \
+                or (current_scramble == best_scramble_len and success_rate > best_success_rate)) and episodes_in_current_scramble_len > 5000:
+                    best_scramble_len = current_scramble
+                    best_success_rate = success_rate
+                    os.makedirs("models", exist_ok=True)
+                    best_path = self.model_path
+                    self.save(best_path, debug=False)
+                    print(f"🟢 New best model saved with success rate {best_success_rate:.3f} (at scramble len {best_scramble_len})")
 
                 metrics = {
                     "success_rate": success_rate,
@@ -210,10 +207,8 @@ class DQNAgent:
                     "max_reward_in_window": max_reward,
                 }
 
-                # Log to MLflow
                 mlflow.log_metrics(metrics, step=step)
 
-                # Print the same metrics
                 print(
                     f"[{step:07d}] "
                     f"ε={metrics['epsilon']:.3f} | "
@@ -226,11 +221,19 @@ class DQNAgent:
                     f"current_scramble={metrics['current_scramble']}"
                 )
 
+                if (best_scramble_len >= self.env.scramble_max and
+                    best_success_rate >= 0.99 and
+                    episodes_in_current_scramble_len >= 5000):
+                    print(f"\n✅ Training complete: target performance reached! "
+                        f"(scramble={best_scramble_len}, success_rate={best_success_rate:.3f})")
+                    break
+
         print("✅ Training completed.")
 
-    def save(self, path):
+    def save(self, path, debug=True):
         torch.save(self.q_net.state_dict(), path)
-        print(f"Model saved to {path}")
+        if debug:
+            print(f"Model saved to {path}")
 
     def load(self, path):
         self.q_net.load_state_dict(torch.load(path, map_location=self.device))

@@ -7,9 +7,10 @@ import random
 def evaluate_model(
     model_path="models/rl_agent.pth",
     scramble_min=1,
-    scramble_max=5,
+    scramble_max=11,
     max_steps=20,
     device="cuda",
+    debug=False
 ):
     env = Rubik2x2Env(
         max_steps=max_steps,
@@ -41,12 +42,13 @@ def evaluate_model(
             scramble_moves = env.cube.scramble(scramble_len, seed=random.randint(0, 10000))
             if not env.cube.is_solved():
                 break
+        
+        if debug:
+            print("\nScramble moves:")
+            print(" → ".join([f"{face_dir(face, dirn)}" for face, dirn in scramble_moves]))
 
-        print("\nScramble moves:")
-        print(" → ".join([f"{face_dir(face, dirn)}" for face, dirn in scramble_moves]))
-
-        print("\nInitial scrambled cube:")
-        print(render_cube_ascii(env.cube.state))
+            print("\nInitial scrambled cube:")
+            print(render_cube_ascii(env.cube.state))
 
         obs = env._get_obs()
         done = False
@@ -63,22 +65,26 @@ def evaluate_model(
             obs, reward, terminated, truncated, info = env.step(action)
             step_count += 1
 
-            print(f"\nStep {step_count}: {action_to_str(action)}")
-            print(render_cube_ascii(env.cube.state))
+            if debug:
+                print(f"\nStep {step_count}: {action_to_str(action)}")
+                print(render_cube_ascii(env.cube.state))
 
             done = terminated or truncated
 
             if terminated:
-                print("\n✅ SOLVED!")
+                if debug:
+                    print("\n✅ SOLVED!")
                 solved_scrambles += 1
                 break
 
         if not terminated:
-            print("\n❌ NOT SOLVED within max steps")
+            if debug:
+                print("\n❌ NOT SOLVED within max steps")
 
         total_scrambles += 1
-        print(f"\nAgent moves ({len(move_seq)}): {' → '.join(action_to_str(a) for a in move_seq)}")
-        print("=" * 60)
+        if debug:
+            print(f"\nAgent moves ({len(move_seq)}): {' → '.join(action_to_str(a) for a in move_seq)}")
+            print("=" * 60)
 
     print(f"\n=== EVALUATION SUMMARY ===")
     print(f"Total scrambles: {total_scrambles}")
@@ -116,8 +122,8 @@ def action_to_str(action):
 if __name__ == "__main__":
     evaluate_model(
         model_path="models/rl_agent.pth",
-        scramble_min=1,
-        scramble_max=10,
-        max_steps=35,
+        scramble_min=50,
+        scramble_max=1050,
+        max_steps=100,
         device="cuda",
     )

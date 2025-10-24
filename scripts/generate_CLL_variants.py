@@ -2,11 +2,9 @@ import json
 from pathlib import Path
 from envs.rubik2x2_env import Rubik2x2Env
 
-# Input/output paths
 input_path = Path("datasets/upper_layer_algorithms.json")
 output_path = Path("datasets/upper_layer_algorithms_full.json")
 
-# Load original algorithms
 with open(input_path, "r", encoding="utf-8") as f:
     algorithms = json.load(f)
 
@@ -49,18 +47,15 @@ def generate_rotations(alg_name, moves):
         rotations[variant_name] = [prefix] + moves
     return rotations
 
-# Step 1: track unique states
 unique_states = {}
 extended_algorithms = {}
 
-# original algorithms
 for name, moves in algorithms.items():
     state = apply_moves(moves)
     if state not in unique_states:
         unique_states[state] = name
         extended_algorithms[name] = moves
 
-# mirrors
 for name, moves in list(extended_algorithms.items()):
     for m_name, m_moves in generate_mirrors(name, moves).items():
         state = apply_moves(m_moves)
@@ -68,7 +63,6 @@ for name, moves in list(extended_algorithms.items()):
             unique_states[state] = m_name
             extended_algorithms[m_name] = m_moves
 
-# rotations
 final_algorithms = dict(extended_algorithms)
 for name, moves in list(extended_algorithms.items()):
     for r_name, r_moves in generate_rotations(name, moves).items():
@@ -77,7 +71,6 @@ for name, moves in list(extended_algorithms.items()):
             unique_states[state] = r_name
             final_algorithms[r_name] = r_moves
 
-# Step 3: save file in one-line JSON format
 lines = ["{"]
 items = list(final_algorithms.items())
 for i, (name, moves) in enumerate(items):

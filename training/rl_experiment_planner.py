@@ -6,20 +6,20 @@ from training.train_rl import train_rl_agent
 import torch
 
 def generate_experiments():
-    """Creates a list of all parameter combinations."""
     grid = {
         "reward_mode": ["bottom_layer_corners",],
         "scramble_min": [1],
-        "scramble_max": [30],
+        "scramble_max": [12],
         "resets_per_jump": [100000],
-        "total_steps": [20000000],
-        "max_steps": [11],
-        "batch_size": [256], # 128 for more stable results
-        "lr": [1e-4], # To test
-        "gamma": [0.99], # To test
-        "epsilon_start": [1.0],
-        "epsilon_end": [0.05], # 0.25, 0.05 works good
-        "epsilon_decay": [0.99997], # 0.99995, 0.999995 works good
+        "total_steps": [3000000],
+        "max_steps": [30],
+        "batch_size": [256],
+        "lr": [1e-4],
+        "gamma": [0.99],
+        "epsilon_start": [0.3],
+        "epsilon_end": [0.01],
+        "epsilon_decay": [0.99997],
+        "update_epsilon": [False],
         "device": ["cuda" if torch.cuda.is_available() else "cpu"],
     }
 
@@ -28,7 +28,6 @@ def generate_experiments():
         yield dict(zip(keys, combination))
 
 def run_experiment(config):
-    """Wrapper to run a single experiment."""
     print(f"\n🚀 Starting experiment: {config}")
 
     start_time = time.time()
@@ -37,6 +36,7 @@ def run_experiment(config):
         max_steps=config["max_steps"],
         reward_mode=config["reward_mode"],
         scramble_min=config["scramble_min"],
+        scramble_max=config["scramble_max"],
         resets_per_jump=config["resets_per_jump"],
         batch_size=config["batch_size"],
         lr=config["lr"],
@@ -44,6 +44,7 @@ def run_experiment(config):
         epsilon_start=config["epsilon_start"],
         epsilon_end=config["epsilon_end"],
         epsilon_decay=config["epsilon_decay"],
+        update_epsilon=config["update_epsilon"],
         device=config["device"],
         use_mlflow=True
     )
@@ -59,12 +60,10 @@ def main():
     os.makedirs("experiments", exist_ok=True)
     csv_path = os.path.join("experiments", "experiment_results.csv")
 
-    # Count total experiments
     experiments = list(generate_experiments())
     total_experiments = len(experiments)
     print(f"⚡ Total experiments to run: {total_experiments}")
 
-    # CSV header
     with open(csv_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=[
             "reward_mode", "scramble_min", "scramble_max",
@@ -76,7 +75,6 @@ def main():
         print(f"\n🔹 Running experiment {i}/{total_experiments}")
         result = run_experiment(config)
 
-        # Save results to CSV
         with open(csv_path, "a", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=result.keys())
             writer.writerow(result)

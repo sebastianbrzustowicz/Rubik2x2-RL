@@ -1,4 +1,3 @@
-import os
 from envs.rubik2x2_env import Rubik2x2Env
 from agents.dqn_agent import DQNAgent
 import mlflow
@@ -18,6 +17,8 @@ def train_rl_agent(
     epsilon_end=0.5,
     epsilon_decay=0.9999,
     resets_per_jump=5000,
+    model_path="models/rl_agent.pth",
+    update_epsilon=False
 ):
     if use_mlflow:
         mlflow.set_experiment("Rubik2x2_DQN")
@@ -48,13 +49,11 @@ def train_rl_agent(
         gamma=gamma,
         epsilon_start=epsilon_start,
         epsilon_end=epsilon_end,
-        epsilon_decay=epsilon_decay
+        epsilon_decay=epsilon_decay,
+        model_path=model_path,
+        update_epsilon=update_epsilon
     )
     agent.train(total_steps=total_steps)
-
-    os.makedirs("models", exist_ok=True)
-    model_path = "models/rl_agent.pth"
-    agent.save(model_path)
 
     if use_mlflow:
         mlflow.end_run()

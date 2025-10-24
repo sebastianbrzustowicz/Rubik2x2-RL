@@ -9,7 +9,6 @@ OUTPUT_FILE = os.path.join(DATASET_DIR, "demonstrations.json")
 
 os.makedirs(DATASET_DIR, exist_ok=True)
 
-# Load algorithms
 with open(ALGO_FILE, "r") as f:
     algorithms = json.load(f)
 
@@ -25,21 +24,19 @@ MOVE_MAP = {
     "R": (5, 0), "R'": (5, 1), "R2": (5, 2),
 }
 
-# Function to invert moves
 def invert_move(move: str) -> str:
     if move.endswith("2"):
-        return move  # 180 stays the same
+        return move
     elif move.endswith("'"):
-        return move[:-1]  # remove prime
+        return move[:-1]
     else:
-        return move + "'"  # add prime
+        return move + "'"
 
 demonstrations = []
 
 for algo_id, (pattern_name, moves) in enumerate(algorithms.items()):
     env.cube.reset()
 
-    # Reverse and invert algorithm
     reversed_moves = [invert_move(m) for m in reversed(moves)]
 
     for move in reversed_moves:
@@ -54,7 +51,6 @@ for algo_id, (pattern_name, moves) in enumerate(algorithms.items()):
         else:
             env.cube.rotate_180(face_id)
 
-    # Save cube state
     state = copy.deepcopy(env.cube.state).tolist()
 
     demonstrations.append({

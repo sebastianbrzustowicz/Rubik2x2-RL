@@ -73,13 +73,11 @@ class Cube2x2:
 
     def rotate_cw(self, face_id):
         """Clockwise rotation of the given face, including neighboring sides."""
-        # Rotate the face itself
         self.state[face_id] = self.state[face_id][[2, 0, 3, 1]]
 
         faces, indices = self.neighbors[face_id]
         temp = [self.state[f][idx].copy() for f, idx in zip(faces, indices)]
 
-        # For U/D faces, rotate neighbors in the opposite direction
         direction = -1 if face_id in [0, 1] else 1
 
         for i in range(4):
@@ -87,13 +85,11 @@ class Cube2x2:
 
     def rotate_ccw(self, face_id):
         """Counter-clockwise rotation of the given face, including neighboring sides."""
-        # Rotate the face itself
         self.state[face_id] = self.state[face_id][[1, 3, 0, 2]]
 
         faces, indices = self.neighbors[face_id]
         temp = [self.state[f][idx].copy() for f, idx in zip(faces, indices)]
 
-        # For U/D faces, rotate neighbors in the opposite direction
         direction = 1 if face_id in [0, 1] else -1
 
         for i in range(4):
@@ -101,7 +97,6 @@ class Cube2x2:
 
     def rotate_180(self, face_id):
         """180-degree rotation of the given face."""
-        # Two CW rotations = 180 degrees
         self.rotate_cw(face_id)
         self.rotate_cw(face_id)
 

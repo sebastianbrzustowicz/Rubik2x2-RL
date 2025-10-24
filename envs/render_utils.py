@@ -1,4 +1,3 @@
-# Color mapping (for terminal display)
 COLOR_CODES = {
     0: "\033[97m",        # White (U)
     1: "\033[93m",        # Yellow (D)
@@ -9,7 +8,6 @@ COLOR_CODES = {
 }
 RESET = "\033[0m"
 
-# Color symbols (for non-colored mode)
 COLOR_SYMBOLS = ["W", "Y", "G", "B", "O", "R"]
 
 
@@ -30,10 +28,8 @@ def render_cube_ascii(state, use_color=True):
         return COLOR_SYMBOLS[val]
 
     lines = []
-    # Upper face
     lines.append("    " + c(0, 0) + " " + c(0, 1))
     lines.append("    " + c(0, 2) + " " + c(0, 3))
-    # Middle strip (L, F, R, B)
     lines.append(
         f"{c(4,0)} {c(4,1)} "
         f"{c(2,0)} {c(2,1)} "
@@ -46,7 +42,6 @@ def render_cube_ascii(state, use_color=True):
         f"{c(5,2)} {c(5,3)} "
         f"{c(3,2)} {c(3,3)}"
     )
-    # Bottom face
     lines.append("    " + c(1, 0) + " " + c(1, 1))
     lines.append("    " + c(1, 2) + " " + c(1, 3))
 

@@ -18,11 +18,10 @@ def main():
         "R": (5, 0), "R'": (5, 1), "R2": (5, 2),
     }
 
-    state_map = {}  # key: flattened cube state tuple, value: set of labels
+    state_map = {}
 
     for name, moves in algorithms.items():
         env.cube.reset()
-        # Apply moves to cube
         for move in moves:
             face, direction = MOVE_MAP[move]
             if direction == 0:
@@ -32,14 +31,12 @@ def main():
             else:
                 env.cube.rotate_180(face)
 
-        # Flatten cube state
         state_tuple = tuple(np.array(env.cube.state).flatten())
 
         if state_tuple not in state_map:
             state_map[state_tuple] = set()
         state_map[state_tuple].add(name)
 
-    # Check for conflicts: same state, different labels
     conflicts = []
     for state, labels in state_map.items():
         if len(labels) > 1:

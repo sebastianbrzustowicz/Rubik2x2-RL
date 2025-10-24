@@ -3,6 +3,8 @@
 training/train_multi_paradigm.py
 callbacks/
 mlruns/
-models/
+models/*
+#!models/il_classifier.pth
+#!models/rl_agent.pth
 scripts/analyze_results.py
 main.py

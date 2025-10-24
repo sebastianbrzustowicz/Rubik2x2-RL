@@ -19,13 +19,12 @@ class Rubik2x2Env(gym.Env):
         scramble_max: int = 20,
         resets_per_jump: int = 5000,
         scramble_jump: int = 1,
-        scramble_mode: str = "gradual",  # "gradual" or "weighted"
+        scramble_mode: str = "gradual",
         render_mode: str | None = None,
         device: str | None = None,
     ):
         super().__init__()
 
-        # Core environment settings
         self.max_steps = max_steps
         self.reward_mode = reward_mode
         self.scramble_min = scramble_min
@@ -36,22 +35,20 @@ class Rubik2x2Env(gym.Env):
         self.render_mode = render_mode
         self.device = device or ("cuda" if self._has_cuda() else "cpu")
 
-        # State management
         self.cube = Cube2x2()
         self.current_step = 0
         self.total_resets = 0
         self.current_scramble = scramble_min
         self.level_resets_count = 0
 
-        # Spaces
-        self.action_space = spaces.Discrete(18)  # 6 faces × 3 directions
+        self.action_space = spaces.Discrete(18)
         self.observation_space = spaces.Box(
             low=0.0, high=5.0, shape=(24 * 6,), dtype=np.float32
         )
 
-        self.level_success_history = []  # success history for current scramble
+        self.level_success_history = []
         self.adaptive_scramble_threshold = 0.7
-        self.adaptive_scramble_window = 2000
+        self.adaptive_scramble_window = 10000
         self.easy_scramble_prob = 0.1
 
         self.prev_face_id = None
@@ -67,19 +64,16 @@ class Rubik2x2Env(gym.Env):
 
         self.prev_cube = copy.deepcopy(self.cube)
 
-        # Update level success history only for FULL scrambles
         if last_solved is not None and last_scramble == self.current_scramble:
             self.level_success_history.append(int(last_solved))
             if len(self.level_success_history) > self.adaptive_scramble_window:
                 self.level_success_history.pop(0)
             self._update_scramble_difficulty()
 
-        # Selecting scramble len
         choices = [self.current_scramble - 1, self.current_scramble, self.current_scramble + 1]
         weights = [0.25, 0.5, 0.25]
         scramble_length = int(np.clip(random.choices(choices, weights=weights)[0], self.scramble_min, self.scramble_max))
 
-        # Scramble until unsolved
         while True:
             self.cube.reset()
             self.cube.scramble(scramble_length)
@@ -100,7 +94,6 @@ class Rubik2x2Env(gym.Env):
             face_id = new_face_id
             action = face_id + direction * 6
 
-        # Make a copy of the previous state of the cube
         self.prev_cube = self.cube.copy()
 
         if direction == 0:
@@ -113,7 +106,6 @@ class Rubik2x2Env(gym.Env):
         self.current_step += 1
         solved = self.cube.is_solved()
 
-        # Reward calculation z prev_cube
         reward, current_correct = compute_reward(
             cube=self.cube,
             solved=solved,
@@ -129,7 +121,6 @@ class Rubik2x2Env(gym.Env):
         self.prev_face_id = face_id
         self.prev_correct_corners = current_correct
 
-        # Termination conditions
         terminated = solved
         truncated = self.current_step >= self.max_steps
 
@@ -146,16 +137,14 @@ class Rubik2x2Env(gym.Env):
 
     def _get_obs(self):
         flat = np.array(self.cube.state).flatten().astype(int)
-        one_hot = np.eye(6, dtype=np.float32)[flat]  # (24,6)
+        one_hot = np.eye(6, dtype=np.float32)[flat]
         return one_hot.flatten()
 
     def _update_scramble_difficulty(self):
         if len(self.level_success_history) >= self.adaptive_scramble_window:
             avg_success = np.mean(self.level_success_history[-self.adaptive_scramble_window:])
             if avg_success >= self.adaptive_scramble_threshold:
-                # Increase scramble level
                 self.current_scramble = min(self.current_scramble + 1, self.scramble_max)
-                # Reset history for new level
                 self.level_success_history = []
 
     def render(self):

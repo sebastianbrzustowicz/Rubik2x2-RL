@@ -32,10 +32,8 @@ def evaluate_real_case(trials=TRIALS):
         scramble_moves = random.choices(list(apply_moves.__globals__["MOVE_MAP"].keys()), k=scramble_len)
         apply_moves(env.cube, scramble_moves)
 
-        # Solve bottom layer
         lbl_moves = solve_bottom_layer(env.cube)
 
-        # Prepare input for IL model
         obs = np.array(env.cube.state).flatten()
         x = np.eye(6, dtype=np.float32)[obs].flatten()
         x = torch.tensor(x, dtype=torch.float32).unsqueeze(0).to(DEVICE)
@@ -47,16 +45,13 @@ def evaluate_real_case(trials=TRIALS):
         predicted_name = list(algorithms.keys())[pred]
         predicted_moves = algorithms[predicted_name]
 
-        # Apply predicted moves
         apply_moves(env.cube, predicted_moves)
 
-        # Check if solved
         solved = env.cube.is_entire_cube_solved()
         success_rates.append(solved)
         if solved:
             solved_count += 1
         else:
-            # Print only failed predictions
             print(f"\n--- Trial {i} FAILED ---")
             print(f"Scramble moves: {scramble_moves}")
             print("Cube state AFTER scramble:")

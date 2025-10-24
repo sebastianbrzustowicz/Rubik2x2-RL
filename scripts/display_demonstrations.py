@@ -6,14 +6,12 @@ DATASET_DIR = "datasets"
 DEMO_FILE = os.path.join(DATASET_DIR, "demonstrations.json")
 ALGO_FILE = os.path.join(DATASET_DIR, "upper_layer_algorithms_full.json")
 
-# Load data
 with open(DEMO_FILE, "r") as f:
     demonstrations = json.load(f)
 
 with open(ALGO_FILE, "r") as f:
     algorithms = json.load(f)
 
-# Helper to invert moves
 def invert_move(move: str) -> str:
     if move.endswith("2"):
         return move

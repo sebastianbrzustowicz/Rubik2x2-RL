@@ -8,7 +8,7 @@ import numpy as np
 from envs.rubik2x2_env import Rubik2x2Env
 from envs.render_utils import render_cube_ascii
 
-# ===== Dataset =====
+
 class ILDataset(Dataset):
     def __init__(self, algo_file, debug=False):
         with open(algo_file, "r") as f:
@@ -74,7 +74,6 @@ class ILDataset(Dataset):
         return torch.tensor(x), torch.tensor(y)
 
 
-# ===== Model =====
 class ILClassifier(nn.Module):
     def __init__(self, input_dim=144, hidden_dim=512, num_classes=20):
         super().__init__()
@@ -90,7 +89,6 @@ class ILClassifier(nn.Module):
         return self.net(x)
 
 
-# ===== Training =====
 def train(model, dataloader, epochs=100, lr=1e-3):
     optimizer = optim.Adam(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss()
