@@ -8,6 +8,7 @@ The system consists of two independently trained models:
 
 <p align="center">
   <img src="images/rl_model_training.png" width="100%" alt="RL Training Progress">
+  <br><em>Training progress and metrics tracked in MLflow.</em>
 </p>
 
 
