@@ -15,8 +15,6 @@ def compute_reward(
 
     scramble_factor = np.exp(0.25 * current_scramble) / np.exp(0.25 * scramble_max)
 
-    scramble_factor = np.exp(0.25 * current_scramble) / np.exp(0.25 * scramble_max)
-    # --- Additional factor for penalties: grows slower than scramble_factor ---
     penalty_scale = 1.0 + 0.5 * (current_scramble / scramble_max) ** 1.5
 
     reward = 0.0
@@ -94,7 +92,7 @@ def compute_reward(
         reward = 1.0 if is_bottom_face_solved(cube) else 0.0
         if reward == 1.0:
             reward += BONUS_FULL
-        return reward
+        return reward, None
 
     elif mode == "bottom_layer":
         reward = 0.0
@@ -114,7 +112,7 @@ def compute_reward(
         # add bonus if the entire cube is solved
         if solved:
             reward += BONUS_FULL
-        return reward
+        return reward, None
 
     else:
-        return 0.0
+        return 0.0, None

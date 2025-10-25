@@ -1,5 +1,15 @@
 import numpy as np
 import random
+from typing import List
+
+MOVE_MAP = {
+    "U": (0, 0), "U'": (0, 1), "U2": (0, 2),
+    "D": (1, 0), "D'": (1, 1), "D2": (1, 2),
+    "F": (2, 0), "F'": (2, 1), "F2": (2, 2),
+    "B": (3, 0), "B'": (3, 1), "B2": (3, 2),
+    "L": (4, 0), "L'": (4, 1), "L2": (4, 2),
+    "R": (5, 0), "R'": (5, 1), "R2": (5, 2),
+}
 
 class Cube2x2:
     """Logical representation of the 2x2 Rubik’s Cube."""
@@ -99,6 +109,16 @@ class Cube2x2:
         """180-degree rotation of the given face."""
         self.rotate_cw(face_id)
         self.rotate_cw(face_id)
+
+    def apply_moves(self, moves: List[str]):
+        for m in moves:
+            face, dirn = MOVE_MAP[m]
+            if dirn == 0:
+                self.rotate_cw(face)
+            elif dirn == 1:
+                self.rotate_ccw(face)
+            else:
+                self.rotate_180(face)
 
     def is_solved(self, strict=True):
         """Check if the bottom layer is solved."""

@@ -123,7 +123,7 @@ if __name__ == "__main__":
     evaluate_model(
         model_path="models/rl_agent.pth",
         scramble_min=50,
-        scramble_max=1050,
+        scramble_max=5050,
         max_steps=100,
         device="cuda",
     )

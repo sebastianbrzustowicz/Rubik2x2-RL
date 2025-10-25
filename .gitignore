@@ -1,10 +1,10 @@
 **/__pycache__/
 
 training/train_multi_paradigm.py
-callbacks/
-mlruns/
+experiments/*
+mlruns/*
 models/*
-#!models/il_classifier.pth
-#!models/rl_agent.pth
+!models/il_classifier.pth
+!models/rl_agent.pth
 scripts/analyze_results.py
 main.py

@@ -84,7 +84,7 @@ class Rubik2x2Env(gym.Env):
         info = {"current_scramble": scramble_length}
         return obs, info
 
-    def step(self, action: int):
+    def step(self, action: int, return_applied_action: bool = False):
         face_id = action % 6
         direction = action // 6  # 0=CW, 1=CCW, 2=180
 
@@ -133,7 +133,10 @@ class Rubik2x2Env(gym.Env):
             "current_scramble": self.current_scramble,
         }
 
-        return obs, reward, terminated, truncated, info
+        if return_applied_action:
+            return obs, reward, terminated, truncated, info, action
+        else:
+            return obs, reward, terminated, truncated, info
 
     def _get_obs(self):
         flat = np.array(self.cube.state).flatten().astype(int)

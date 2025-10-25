@@ -238,4 +238,3 @@ class DQNAgent:
     def load(self, path):
         self.q_net.load_state_dict(torch.load(path, map_location=self.device))
         self.target_net.load_state_dict(self.q_net.state_dict())
-        print(f"Model loaded from {path}")
