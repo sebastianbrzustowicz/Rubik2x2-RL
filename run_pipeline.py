@@ -15,7 +15,8 @@ def run_pipeline(
     scramble_str=None,
     max_steps=100,
     device="cuda",
-    debug=False
+    debug=False,
+    quiet=False
 ):
     if scramble_str is None:
         raise ValueError("You must provide a scramble via --scramble")
@@ -83,7 +84,8 @@ def run_pipeline(
         raise RuntimeError(f"IL model failed to solve cube with predicted algorithm '{alg_name}'")
 
     cube_state_il = np.copy(env.cube.state)
-    il_actions = parse_moves_to_actions(alg_moves)
+    rl_notation = [action_to_notation(a) for a in rl_moves]
+    total_moves = rl_notation + alg_moves
 
     if debug:
         print("\n=== RUN PIPELINE ===\n")
@@ -98,9 +100,10 @@ def run_pipeline(
         print(render_cube_ascii(cube_state_il))
         print("\nRL moves:", [action_to_notation(a) for a in rl_moves])
         print("IL moves:", alg_moves)
+    elif quiet:
+        print(' '.join(total_moves))
     else:
-        rl_notation = [action_to_notation(a) for a in rl_moves]
-        print(f"\nFull solution ({len(rl_notation)+len(alg_moves)} moves): {' '.join(rl_notation + alg_moves)}")
+        print(f"\nFull solution ({len(total_moves)} moves): {' '.join(total_moves)}")
 
     return rl_moves, alg_moves, cube_state_rl, cube_state_il
 
@@ -153,6 +156,7 @@ if __name__ == "__main__":
     parser.add_argument("--algo_file", type=str, default="datasets/upper_layer_algorithms_full.json")
     parser.add_argument("--max_steps", type=int, default=100)
     parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--quiet", action="store_true", help="Display only final solution without debug info")
     args = parser.parse_args()
 
     run_pipeline(
@@ -162,5 +166,6 @@ if __name__ == "__main__":
         scramble_str=args.scramble,
         max_steps=args.max_steps,
         device=args.device,
-        debug=False
+        debug=False,
+        quiet=args.quiet
     )
