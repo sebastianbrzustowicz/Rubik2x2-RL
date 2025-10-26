@@ -1,6 +1,6 @@
-# Rubik-RL: Reinforcement and Imitation Learning for Solving the 2×2×2 Cube
+# Rubik2x2-RL: Reinforcement and Imitation Learning for Solving the 2×2×2 Cube
 
-Rubik-RL is a research-oriented project that combines **Reinforcement Learning (RL)** and **Imitation Learning (IL)** to solve the 2×2×2 Rubik’s Cube.  
+Rubik2x2-RL is a research-oriented project that combines **Reinforcement Learning (RL)** and **Imitation Learning (IL)** to solve the 2×2×2 Rubik’s Cube.  
 The system consists of two independently trained models:
 
 1. **RL agent** – responsible for solving the first layer.  
@@ -105,7 +105,7 @@ The imitation learning model achieves perfect accuracy on the augmented dataset,
 ## Project Structure
 
 ```yaml
-Rubik-RL/
+Rubik2x2-RL/
 ├── agents/                              # Folder containing RL agents and related modules
 │   ├── __init__.py                      # Package initializer
 │   ├── dqn_agent.py                     # DQN agent implementation and training loop
@@ -194,7 +194,7 @@ python run_pipeline.py --scramble "<your_scramble_sequence>"
 
 ## License
 
-Rubik-RL is released under the MIT license.
+Rubik2x2-RL is released under the MIT license.
 
 ## Author
 
