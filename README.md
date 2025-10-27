@@ -14,7 +14,7 @@ The system consists of two independently trained models:
 
 ## Overview
 
-The project introduces a fully custom Rubik’s Cube environment implemented in PyTorch and designed for training RL and IL agents using PyTorch.
+The project introduces a fully custom Rubik’s Cube environment designed for training RL and IL agents implemented in PyTorch.
 It supports curriculum learning, several reward schemes, and detailed evaluation of learned behaviors.
 
 **Example usage:**
