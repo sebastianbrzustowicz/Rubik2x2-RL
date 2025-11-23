@@ -28,6 +28,21 @@ Example generated output:
 Full solution (5 moves): F2 B L U B'
 ```
 
+
+## Technical Details
+
+| Feature | Description |
+|----------|-------------|
+| RL Algorithm | Deep Q-Network (DQN) |
+| Curriculum Strategy | Gradual increase of scramble depth |
+| Exploration | *Optional epsilon reset or decay per curriculum stage |
+| Reward Shaping | Progress-based with scaled penalties and bonuses |
+| State Encoding | One-hot (144-dimensional) |
+| IL Augmentation | CLL, Y-perm, J-perm with mirrors and rotations |
+| Frameworks | PyTorch, MLflow |
+| Environment | Deterministic 2×2×2 cube simulator |
+
+
 ## Results and Evaluation
 
 The training and evaluation results indicate that the curriculum and reward shaping strategies lead to stable convergence of both models.
@@ -179,20 +194,6 @@ A single script allows running both models in sequence on a given scramble, demo
 ```bash
 make run-pipeline SCRAMBLE="<your_scramble_sequence>"
 ```
-
-
-## Technical Details
-
-| Feature | Description |
-|----------|-------------|
-| RL Algorithm | Deep Q-Network (DQN) |
-| Curriculum Strategy | Gradual increase of scramble depth |
-| Exploration | *Optional epsilon reset or decay per curriculum stage |
-| Reward Shaping | Progress-based with scaled penalties and bonuses |
-| State Encoding | One-hot (144-dimensional) |
-| IL Augmentation | CLL, Y-perm, J-perm with mirrors and rotations |
-| Frameworks | PyTorch, MLflow |
-| Environment | Deterministic 2×2×2 cube simulator |
 
 
 ## License
