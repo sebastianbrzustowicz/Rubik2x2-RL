@@ -1,6 +1,6 @@
 import json
 import numpy as np
-from envs.rubik2x2_env import Rubik2x2Env
+from rubik2x2.envs.rubik2x2_env import Rubik2x2Env
 
 DATASET_PATH = "datasets/upper_layer_algorithms_full.json"
 
