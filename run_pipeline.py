@@ -2,11 +2,12 @@ import argparse
 import json
 import torch
 import numpy as np
-from envs.rubik2x2_env import Rubik2x2Env
-from agents.dqn_agent import DQNAgent
-from training.train_il import ILClassifier
-from envs.render_utils import render_cube_ascii
-from envs.lbl_solver import solve_bottom_layer, apply_moves as apply_moves_fn
+from rubik2x2.envs.rubik2x2_env import Rubik2x2Env
+from rubik2x2.agents.dqn_agent import DQNAgent
+from rubik2x2.training.train_il import ILClassifier
+from rubik2x2.envs.render_utils import render_cube_ascii
+from rubik2x2.envs.lbl_solver import solve_bottom_layer, apply_moves as apply_moves_fn
+
 
 def run_pipeline(
     rl_model_path="models/rl_agent.pth",
@@ -16,7 +17,7 @@ def run_pipeline(
     max_steps=100,
     device="cuda",
     debug=False,
-    quiet=False
+    quiet=False,
 ):
     if scramble_str is None:
         raise ValueError("You must provide a scramble via --scramble")
@@ -61,7 +62,9 @@ def run_pipeline(
         print("\n--- Running RL moves ---")
     while not done and step_count < max_steps:
         action = rl_agent.select_action(obs)
-        obs, reward, terminated, truncated, info, action = env.step(action, return_applied_action=True)
+        obs, reward, terminated, truncated, info, action = env.step(
+            action, return_applied_action=True
+        )
         rl_moves.append(action)
         step_count += 1
         done = terminated or truncated
@@ -81,7 +84,9 @@ def run_pipeline(
     apply_moves_fn(env.cube, alg_moves)
 
     if not env.cube.is_entire_cube_solved():
-        raise RuntimeError(f"IL model failed to solve cube with predicted algorithm '{alg_name}'")
+        raise RuntimeError(
+            f"IL model failed to solve cube with predicted algorithm '{alg_name}'"
+        )
 
     cube_state_il = np.copy(env.cube.state)
     rl_notation = [action_to_notation(a) for a in rl_moves]
@@ -101,7 +106,7 @@ def run_pipeline(
         print("\nRL moves:", [action_to_notation(a) for a in rl_moves])
         print("IL moves:", alg_moves)
     elif quiet:
-        print(' '.join(total_moves))
+        print(" ".join(total_moves))
     else:
         print(f"\nFull solution ({len(total_moves)} moves): {' '.join(total_moves)}")
 
@@ -130,13 +135,13 @@ def parse_scramble_to_actions(scramble_moves):
 
 
 def parse_moves_to_actions(move_list):
-    faces = {"U":0,"D":1,"F":2,"B":3,"L":4,"R":5}
-    dirs = {"":0,"'":1,"2":2}
+    faces = {"U": 0, "D": 1, "F": 2, "B": 3, "L": 4, "R": 5}
+    dirs = {"": 0, "'": 1, "2": 2}
     actions = []
     for m in move_list:
         face = faces[m[0]]
         direction = dirs[m[1:]] if len(m) > 1 else 0
-        actions.append(face + 6*direction)
+        actions.append(face + 6 * direction)
     return actions
 
 
@@ -153,10 +158,16 @@ if __name__ == "__main__":
     parser.add_argument("--scramble", type=str, required=True)
     parser.add_argument("--rl_model_path", type=str, default="models/rl_agent.pth")
     parser.add_argument("--il_model_path", type=str, default="models/il_classifier.pth")
-    parser.add_argument("--algo_file", type=str, default="datasets/upper_layer_algorithms_full.json")
+    parser.add_argument(
+        "--algo_file", type=str, default="datasets/upper_layer_algorithms_full.json"
+    )
     parser.add_argument("--max_steps", type=int, default=100)
     parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--quiet", action="store_true", help="Display only final solution without debug info")
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Display only final solution without debug info",
+    )
     args = parser.parse_args()
 
     run_pipeline(
@@ -167,5 +178,5 @@ if __name__ == "__main__":
         max_steps=args.max_steps,
         device=args.device,
         debug=False,
-        quiet=args.quiet
+        quiet=args.quiet,
     )

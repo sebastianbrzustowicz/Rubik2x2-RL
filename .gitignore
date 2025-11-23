@@ -8,3 +8,6 @@ models/*
 !models/rl_agent.pth
 scripts/analyze_results.py
 main.py
+build/*
+.venv/*
+src/Rubik2x2_RL.egg-info/*

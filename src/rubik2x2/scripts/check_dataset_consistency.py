@@ -4,18 +4,31 @@ from envs.rubik2x2_env import Rubik2x2Env
 
 DATASET_PATH = "datasets/upper_layer_algorithms_full.json"
 
+
 def main():
     with open(DATASET_PATH, "r") as f:
         algorithms = json.load(f)
 
     env = Rubik2x2Env()
     MOVE_MAP = {
-        "U": (0, 0), "U'": (0, 1), "U2": (0, 2),
-        "D": (1, 0), "D'": (1, 1), "D2": (1, 2),
-        "F": (2, 0), "F'": (2, 1), "F2": (2, 2),
-        "B": (3, 0), "B'": (3, 1), "B2": (3, 2),
-        "L": (4, 0), "L'": (4, 1), "L2": (4, 2),
-        "R": (5, 0), "R'": (5, 1), "R2": (5, 2),
+        "U": (0, 0),
+        "U'": (0, 1),
+        "U2": (0, 2),
+        "D": (1, 0),
+        "D'": (1, 1),
+        "D2": (1, 2),
+        "F": (2, 0),
+        "F'": (2, 1),
+        "F2": (2, 2),
+        "B": (3, 0),
+        "B'": (3, 1),
+        "B2": (3, 2),
+        "L": (4, 0),
+        "L'": (4, 1),
+        "L2": (4, 2),
+        "R": (5, 0),
+        "R'": (5, 1),
+        "R2": (5, 2),
     }
 
     state_map = {}
@@ -51,6 +64,7 @@ def main():
         print("\nOther conflicts omitted...")
     else:
         print("No conflicts found. Dataset is consistent!")
+
 
 if __name__ == "__main__":
     main()

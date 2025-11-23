@@ -5,8 +5,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
-from envs.rubik2x2_env import Rubik2x2Env
-from envs.render_utils import render_cube_ascii
+from rubik2x2.envs.rubik2x2_env import Rubik2x2Env
+from rubik2x2.envs.render_utils import render_cube_ascii
 
 
 class ILDataset(Dataset):
@@ -21,12 +21,24 @@ class ILDataset(Dataset):
 
     def _generate_samples(self):
         MOVE_MAP = {
-            "U": (0, 0), "U'": (0, 1), "U2": (0, 2),
-            "D": (1, 0), "D'": (1, 1), "D2": (1, 2),
-            "F": (2, 0), "F'": (2, 1), "F2": (2, 2),
-            "B": (3, 0), "B'": (3, 1), "B2": (3, 2),
-            "L": (4, 0), "L'": (4, 1), "L2": (4, 2),
-            "R": (5, 0), "R'": (5, 1), "R2": (5, 2),
+            "U": (0, 0),
+            "U'": (0, 1),
+            "U2": (0, 2),
+            "D": (1, 0),
+            "D'": (1, 1),
+            "D2": (1, 2),
+            "F": (2, 0),
+            "F'": (2, 1),
+            "F2": (2, 2),
+            "B": (3, 0),
+            "B'": (3, 1),
+            "B2": (3, 2),
+            "L": (4, 0),
+            "L'": (4, 1),
+            "L2": (4, 2),
+            "R": (5, 0),
+            "R'": (5, 1),
+            "R2": (5, 2),
         }
 
         for algo_id, (name, moves) in enumerate(self.algorithms.items()):
@@ -82,7 +94,7 @@ class ILClassifier(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(hidden_dim, num_classes)
+            nn.Linear(hidden_dim, num_classes),
         )
 
     def forward(self, x):

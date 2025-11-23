@@ -1,13 +1,17 @@
 import numpy as np
-from .reward_helpers import (
-    is_bottom_face_solved,
-    is_bottom_layer_solved
-)
+from .reward_helpers import is_bottom_face_solved, is_bottom_layer_solved
+
 
 def compute_reward(
-    cube, solved, action, prev_cube=None, prev_face_id=None,
-    mode="basic", current_scramble=1, scramble_max=5,
-    prev_correct_corners=None
+    cube,
+    solved,
+    action,
+    prev_cube=None,
+    prev_face_id=None,
+    mode="basic",
+    current_scramble=1,
+    scramble_max=5,
+    prev_correct_corners=None,
 ):
     BONUS_FULL = 50.0
     face_id = action % 6
@@ -28,11 +32,13 @@ def compute_reward(
         ]
 
         current_correct = set()
-        for idx, (down_idx, (side1_id, side1_idx), (side2_id, side2_idx)) in enumerate(corners):
+        for idx, (down_idx, (side1_id, side1_idx), (side2_id, side2_idx)) in enumerate(
+            corners
+        ):
             if (
-                cube.state[1][down_idx] == 1 and
-                cube.state[side1_id][side1_idx] == side1_id and
-                cube.state[side2_id][side2_idx] == side2_id
+                cube.state[1][down_idx] == 1
+                and cube.state[side1_id][side1_idx] == side1_id
+                and cube.state[side2_id][side2_idx] == side2_id
             ):
                 current_correct.add(idx)
 
@@ -56,15 +62,16 @@ def compute_reward(
 
         # --- Additional reward for a simple D move if the bottom layer was complete ---
         if prev_cube is not None:
-            prev_bottom_complete = all(
-                prev_cube.state[1][i] == 1 for i in range(4)
-            )
-            curr_bottom_correct = all(
-                cube.state[1][i] == 1 for i in range(4)
-            )
+            prev_bottom_complete = all(prev_cube.state[1][i] == 1 for i in range(4))
+            curr_bottom_correct = all(cube.state[1][i] == 1 for i in range(4))
             # Additionally, we check whether the bottom stickers on the front side have the correct colors
             front_bottom_correct = cube.state[2][2] == 2 and cube.state[2][3] == 2
-            if prev_bottom_complete and curr_bottom_correct and front_bottom_correct and face_id == 1:  # D
+            if (
+                prev_bottom_complete
+                and curr_bottom_correct
+                and front_bottom_correct
+                and face_id == 1
+            ):  # D
                 reward += 0.5 * scramble_factor  # bonus for a simple move
 
         # --- Penalty for pointless D/U movements if nothing changes ---

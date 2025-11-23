@@ -4,8 +4,9 @@ import numpy as np
 from .cube_state import Cube2x2
 from .rewards.reward_interface import compute_reward
 from .render_utils import render_cube_ascii
-import random 
+import random
 import copy
+
 
 class Rubik2x2Env(gym.Env):
 
@@ -54,7 +55,6 @@ class Rubik2x2Env(gym.Env):
         self.prev_face_id = None
         self.prev_correct_corners = set()
 
-
     def reset(self, *, seed=None, options=None, last_solved=None, last_scramble=None):
         super().reset(seed=seed)
         self.cube.reset()
@@ -70,9 +70,19 @@ class Rubik2x2Env(gym.Env):
                 self.level_success_history.pop(0)
             self._update_scramble_difficulty()
 
-        choices = [self.current_scramble - 1, self.current_scramble, self.current_scramble + 1]
+        choices = [
+            self.current_scramble - 1,
+            self.current_scramble,
+            self.current_scramble + 1,
+        ]
         weights = [0.25, 0.5, 0.25]
-        scramble_length = int(np.clip(random.choices(choices, weights=weights)[0], self.scramble_min, self.scramble_max))
+        scramble_length = int(
+            np.clip(
+                random.choices(choices, weights=weights)[0],
+                self.scramble_min,
+                self.scramble_max,
+            )
+        )
 
         while True:
             self.cube.reset()
@@ -115,7 +125,7 @@ class Rubik2x2Env(gym.Env):
             mode=self.reward_mode,
             current_scramble=self.current_scramble,
             scramble_max=self.scramble_max,
-            prev_correct_corners=self.prev_correct_corners
+            prev_correct_corners=self.prev_correct_corners,
         )
 
         self.prev_face_id = face_id
@@ -145,9 +155,13 @@ class Rubik2x2Env(gym.Env):
 
     def _update_scramble_difficulty(self):
         if len(self.level_success_history) >= self.adaptive_scramble_window:
-            avg_success = np.mean(self.level_success_history[-self.adaptive_scramble_window:])
+            avg_success = np.mean(
+                self.level_success_history[-self.adaptive_scramble_window :]
+            )
             if avg_success >= self.adaptive_scramble_threshold:
-                self.current_scramble = min(self.current_scramble + 1, self.scramble_max)
+                self.current_scramble = min(
+                    self.current_scramble + 1, self.scramble_max
+                )
                 self.level_success_history = []
 
     def render(self):
@@ -160,6 +174,7 @@ class Rubik2x2Env(gym.Env):
     def _has_cuda():
         try:
             import torch
+
             return torch.cuda.is_available()
         except ImportError:
             return False

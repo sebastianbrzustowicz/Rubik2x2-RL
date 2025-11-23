@@ -21,7 +21,7 @@ It supports curriculum learning, several reward schemes, and detailed evaluation
 
 The 2016 WR scramble was used:
 ```bash
-python run_pipeline.py --scramble "U' R F R U R F' U' R2 U' F"
+make run-pipeline SCRAMBLE="U' R F R U R F' U' R2 U' F"
 ```
 Example generated output:
 ```bash
@@ -106,46 +106,49 @@ The imitation learning model achieves perfect accuracy on the augmented dataset,
 
 ```yaml
 Rubik2x2-RL/
-├── agents/                              # Folder containing RL agents and related modules
-│   ├── __init__.py                      # Package initializer
-│   ├── dqn_agent.py                     # DQN agent implementation and training loop
-│   ├── q_network.py                     # Q-network architecture
-│   └── replay_buffer.py                 # Replay buffer for storing experiences
-├── datasets/                            # Folder with demonstration datasets for IL
-│   ├── upper_layer_algorithms.json      # Basic set of algorithms for upper layer
-│   └── upper_layer_algorithms_full.json # Full set of algorithms for upper layer
-├── envs/                                # Folder containing the cube environment
-│   ├── rewards/                         # Reward related files
-│   │   ├── reward_helpers.py            # Helper functions for rewards
-│   │   └── reward_interface.py          # Reward shaping methods
-│   ├── __init__.py
-│   ├── cube_state.py                    # Cube state representation
-│   ├── lbl_solver.py                    # LBL solver used to generate IL states
-│   ├── render_utils.py                  # Utilities for visualizing the cube
-│   └── rubik2x2_env.py                  # Gym environment for the 2x2x2 cube
-├── experiments/                         # Folder with experiment results
-│   └── experiment_results.csv           # CSV with experiment logs
-├── images/                              # Folder for images and plots
-├── mlruns/                              # Folder containing MLflow logs
-├── models/                              # Folder for saved models
-│   ├── il_classifier.pth                # Trained IL model
-│   └── rl_agent.pth                     # Trained RL model
-├── scripts/                             # Utility scripts
-│   ├── check_dataset_consistency.py     # Checks dataset consistency
-│   ├── eval_il_model.py                 # IL model evaluation
-│   ├── eval_lbl.py                      # LBL solver tests
-│   ├── evaluate_rl_model.py             # RL model evaluation
-│   └── generate_CLL_variants.py         # Generate CLL, Y-perm, J-perm variants
-├── training/                            # Folder with training loops
-│   ├── __init__.py
-│   ├── rl_experiment_planner.py         # Planner for running RL experiments
-│   ├── train_il.py                      # IL model training
-│   └── train_rl.py                      # RL model training
-├── .gitignore                           # Git ignore file
-├── LICENSE                              # Project license
-├── README.md                            # Project README
-├── run_pipeline.py                      # Script to run both models sequentially
-└── requirements.txt                     # Python dependencies
+├── datasets/                                # Folder with demonstration datasets for IL
+│   ├── upper_layer_algorithms.json          # Basic set of algorithms for upper layer
+│   └── upper_layer_algorithms_full.json     # Full set of algorithms for upper layer
+├── experiments/                             # Folder with experiment results
+│   └── experiment_results.csv               # CSV with experiment logs
+├── images/                                  # Folder for images and plots
+│   └── rl_model_training.png
+├── models/                                  # Folder for saved models
+│   ├── il_classifier.pth                    # Trained IL model
+│   └── rl_agent.pth                         # Trained RL model
+├── src/                                     # Main source code
+│   └── rubik2x2/
+│       ├── __init__.py
+│       ├── agents/                          # Folder containing RL agents
+│       │   ├── __init__.py                  # Package initializer
+│       │   ├── dqn_agent.py                 # DQN agent implementation and training loop
+│       │   ├── q_network.py                 # Q-network architecture
+│       │   └── replay_buffer.py             # Replay buffer for storing experiences
+│       ├── envs/                            # Folder containing the cube environment
+│       │   ├── rewards/                     # Reward related files
+│       │   │   ├── reward_helpers.py        # Helper functions for rewards
+│       │   │   └── reward_interface.py      # Reward shaping methods
+│       │   ├── __init__.py
+│       │   ├── cube_state.py                # Cube state representation
+│       │   ├── lbl_solver.py                # LBL solver used to generate IL states
+│       │   ├── render_utils.py              # Utilities for visualizing the cube
+│       │   └── rubik2x2_env.py              # Gym environment for the 2x2x2 cube
+│       ├── scripts/                         # Utility scripts
+│       │   ├── check_dataset_consistency.py # Checks dataset consistency
+│       │   ├── evaluate_il_model.py         # IL model evaluation
+│       │   ├── evaluate_lbl.py              # LBL solver tests
+│       │   ├── evaluate_rl_model.py         # RL model evaluation
+│       │   └── generate_CLL_variants.py     # Generate CLL, Y-perm, J-perm variants
+│       └── training/                        # Folder with training loops
+│           ├── __init__.py
+│           ├── rl_experiment_planner.py     # Planner for running RL experiments
+│           ├── train_il.py                  # IL model training
+│           └── train_rl.py                  # RL model training
+├── .gitignore                               # Git ignore file
+├── LICENSE                                  # Project license
+├── README.md                                # Project README
+├── run_pipeline.py                          # Script to run both models sequentially
+└── pyproject.toml                           # Python project config and dependencies
 ```
 
 
@@ -153,28 +156,28 @@ Rubik2x2-RL/
 
 ### Installation
 ```bash
-pip install -r requirements.txt
+make install
 ```
 ### Training
 
 Train the reinforcement learning model with carefully chosen hyperparameters:
 ```bash
-python -m training/rl_experiment_runner.py
+make run-experiment
 ```
 Train the imitation learning model:
 ```bash
-python -m training/train_il.py
+make train-il
 ```
 ### Evaluation
 ```bash
-python scripts/evaluate_rl_model.py
-python scripts/eval_il_model.py
+make evaluate-rl
+make evaluate-il
 ```
 ### Running the Full Pipeline
 A single script allows running both models in sequence on a given scramble, demonstrating a complete solution of the 2×2×2 cube:
 
 ```bash
-python run_pipeline.py --scramble "<your_scramble_sequence>"
+make run-pipeline SCRAMBLE="<your_scramble_sequence>"
 ```
 
 

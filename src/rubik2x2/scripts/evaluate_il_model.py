@@ -1,10 +1,10 @@
 import torch
 import json
 import numpy as np
-from envs.rubik2x2_env import Rubik2x2Env
-from training.train_il import ILClassifier
-from envs.render_utils import render_cube_ascii
-from envs.lbl_solver import solve_bottom_layer, apply_moves
+from rubik2x2.envs.rubik2x2_env import Rubik2x2Env
+from rubik2x2.training.train_il import ILClassifier
+from rubik2x2.envs.render_utils import render_cube_ascii
+from rubik2x2.envs.lbl_solver import solve_bottom_layer, apply_moves
 import random
 import os
 
@@ -12,6 +12,7 @@ MODEL_PATH = "models/il_classifier.pth"
 ALGO_FILE = "datasets/upper_layer_algorithms_full.json"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 TRIALS = 1000
+
 
 def evaluate_real_case(trials=TRIALS):
     with open(ALGO_FILE, "r") as f:
@@ -29,7 +30,9 @@ def evaluate_real_case(trials=TRIALS):
         env = Rubik2x2Env()
         env.cube.reset()
         scramble_len = random.randint(5, 15)
-        scramble_moves = random.choices(list(apply_moves.__globals__["MOVE_MAP"].keys()), k=scramble_len)
+        scramble_moves = random.choices(
+            list(apply_moves.__globals__["MOVE_MAP"].keys()), k=scramble_len
+        )
         apply_moves(env.cube, scramble_moves)
 
         lbl_moves = solve_bottom_layer(env.cube)
@@ -67,7 +70,9 @@ def evaluate_real_case(trials=TRIALS):
         if i % 100 == 0:
             print(f"Trial {i}/{trials} completed")
 
-    print(f"\nFull cube solved in {solved_count}/{trials} trials ({solved_count/trials*100:.2f}%)")
+    print(
+        f"\nFull cube solved in {solved_count}/{trials} trials ({solved_count/trials*100:.2f}%)"
+    )
     total_success_rate = np.mean(success_rates)
     print(f"Average success rate per trial: {total_success_rate*100:.2f}%")
 

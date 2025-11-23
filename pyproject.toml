@@ -1,0 +1,24 @@
+[project]
+name = "Rubik2x2-RL"
+version = "1.0.0"
+requires-python = ">=3.10"
+
+dependencies = [
+    "mlflow",
+    "numpy",
+    "torch",
+    "gymnasium",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "ruff",
+    "pytest",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

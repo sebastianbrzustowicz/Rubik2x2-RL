@@ -1,14 +1,25 @@
 from typing import List, Optional, Set, Tuple
-from envs.rubik2x2_env import Rubik2x2Env
-from envs.render_utils import render_cube_ascii
+from rubik2x2.envs.render_utils import render_cube_ascii
 
 MOVE_MAP = {
-    "U": (0, 0), "U'": (0, 1), "U2": (0, 2),
-    "D": (1, 0), "D'": (1, 1), "D2": (1, 2),
-    "F": (2, 0), "F'": (2, 1), "F2": (2, 2),
-    "B": (3, 0), "B'": (3, 1), "B2": (3, 2),
-    "L": (4, 0), "L'": (4, 1), "L2": (4, 2),
-    "R": (5, 0), "R'": (5, 1), "R2": (5, 2),
+    "U": (0, 0),
+    "U'": (0, 1),
+    "U2": (0, 2),
+    "D": (1, 0),
+    "D'": (1, 1),
+    "D2": (1, 2),
+    "F": (2, 0),
+    "F'": (2, 1),
+    "F2": (2, 2),
+    "B": (3, 0),
+    "B'": (3, 1),
+    "B2": (3, 2),
+    "L": (4, 0),
+    "L'": (4, 1),
+    "L2": (4, 2),
+    "R": (5, 0),
+    "R'": (5, 1),
+    "R2": (5, 2),
 }
 
 CORNERS_POS = {
@@ -22,11 +33,12 @@ CORNERS_POS = {
     "DBR": [(1, 3), (3, 2), (5, 3)],
 }
 
-ORDERED_CORNERS = ["UFR","UFL","UBL","UBR","DFR","DFL","DBL","DBR"]
+ORDERED_CORNERS = ["UFR", "UFL", "UBL", "UBR", "DFR", "DFL", "DBL", "DBR"]
 
 SEXY_MOVE = ["R", "U", "R'", "U'"]
 SEXY_MIRROR = ["F'", "U'", "F", "U"]
 TRIPLE_SEXY = SEXY_MOVE * 3
+
 
 def apply_moves(cube, moves: List[str]):
     for m in moves:
@@ -38,6 +50,7 @@ def apply_moves(cube, moves: List[str]):
         else:
             cube.rotate_180(face)
 
+
 def corner_colors_by_name(cube, name: str) -> Tuple[int, int, int]:
     a, b, c = CORNERS_POS[name]
     return (
@@ -45,6 +58,7 @@ def corner_colors_by_name(cube, name: str) -> Tuple[int, int, int]:
         int(cube.state[b[0]][b[1]]),
         int(cube.state[c[0]][c[1]]),
     )
+
 
 def locate_corner(cube, target_colors: Tuple[int, int, int]) -> Optional[str]:
     color_set = set(target_colors)
@@ -54,8 +68,10 @@ def locate_corner(cube, target_colors: Tuple[int, int, int]) -> Optional[str]:
             return name
     return None
 
+
 def is_corner_on_lower_layer(corner_name: str) -> bool:
     return corner_name in ["DFR", "DFL", "DBL", "DBR"]
+
 
 def setup_corner_on_bottom(cube, corner_name: str) -> List[str]:
     moves = []
@@ -72,11 +88,13 @@ def setup_corner_on_bottom(cube, corner_name: str) -> List[str]:
     moves.extend(corner_moves)
     return moves
 
+
 def undo_D_moves(cube, moves: List[str]) -> List[str]:
     undo_map = {"D": "D'", "D'": "D", "D2": "D2"}
     undo = [undo_map[m] for m in reversed(moves)]
     apply_moves(cube, undo)
     return undo
+
 
 def choose_insertion(cube) -> List[str]:
     corner_colors_vals = corner_colors_by_name(cube, "UFR")
@@ -100,6 +118,7 @@ def choose_insertion(cube) -> List[str]:
         moves.extend(SEXY_MIRROR)
     return moves
 
+
 def rotate_U_to_UFR(cube, corner_name: str) -> List[str]:
     moves = []
     if corner_name == "UFL":
@@ -112,6 +131,7 @@ def rotate_U_to_UFR(cube, corner_name: str) -> List[str]:
         apply_moves(cube, ["U"])
         moves.append("U")
     return moves
+
 
 def solve_bottom_layer(cube, debug: bool = False) -> List[str]:
     moves = []
@@ -166,7 +186,9 @@ def solve_bottom_layer(cube, debug: bool = False) -> List[str]:
         setup_moves = setup_corner_on_bottom(cube, target_corner_name)
         corner_moves.extend(setup_moves)
         if debug and setup_moves:
-            print(f"Setup moves for insertion (target D position {target_corner_name}): {setup_moves}")
+            print(
+                f"Setup moves for insertion (target D position {target_corner_name}): {setup_moves}"
+            )
             print(render_cube_ascii(cube.state))
 
         insertion_moves = choose_insertion(cube)

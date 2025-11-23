@@ -2,12 +2,15 @@ import os
 import csv
 import itertools
 import time
-from training.train_rl import train_rl_agent
+from rubik2x2.training.train_rl import train_rl_agent
 import torch
+
 
 def generate_experiments():
     grid = {
-        "reward_mode": ["bottom_layer_corners",],
+        "reward_mode": [
+            "bottom_layer_corners",
+        ],
         "scramble_min": [1],
         "scramble_max": [12],
         "resets_per_jump": [100000],
@@ -26,6 +29,7 @@ def generate_experiments():
     keys, values = zip(*grid.items())
     for combination in itertools.product(*values):
         yield dict(zip(keys, combination))
+
 
 def run_experiment(config):
     print(f"\n🚀 Starting experiment: {config}")
@@ -46,7 +50,7 @@ def run_experiment(config):
         epsilon_decay=config["epsilon_decay"],
         update_epsilon=config["update_epsilon"],
         device=config["device"],
-        use_mlflow=True
+        use_mlflow=True,
     )
     duration = time.time() - start_time
 
@@ -55,6 +59,7 @@ def run_experiment(config):
         "model_path": model_path,
         "duration_sec": round(duration, 2),
     }
+
 
 def main():
     os.makedirs("experiments", exist_ok=True)
@@ -65,10 +70,18 @@ def main():
     print(f"⚡ Total experiments to run: {total_experiments}")
 
     with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=[
-            "reward_mode", "scramble_min", "scramble_max",
-            "total_steps", "device", "duration_sec", "model_path"
-        ])
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "reward_mode",
+                "scramble_min",
+                "scramble_max",
+                "total_steps",
+                "device",
+                "duration_sec",
+                "model_path",
+            ],
+        )
         writer.writeheader()
 
     for i, config in enumerate(experiments, start=1):
@@ -83,6 +96,7 @@ def main():
 
     print("\n🎯 All experiments completed.")
     print(f"Results saved to: {csv_path}")
+
 
 if __name__ == "__main__":
     main()

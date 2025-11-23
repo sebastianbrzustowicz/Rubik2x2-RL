@@ -7,6 +7,7 @@ from .replay_buffer import ReplayBuffer
 from collections import deque
 import os
 
+
 class DQNAgent:
     def __init__(
         self,
@@ -21,7 +22,7 @@ class DQNAgent:
         device="cuda",
         use_mlflow=False,
         model_path="models/rl_agent.pth",
-        update_epsilon=False
+        update_epsilon=False,
     ):
         self.env = env
         self.device = device
@@ -78,7 +79,9 @@ class DQNAgent:
             return int(np.random.choice(allowed_actions))
 
         with torch.no_grad():
-            state_t = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
+            state_t = torch.tensor(
+                state, dtype=torch.float32, device=self.device
+            ).unsqueeze(0)
             q_values = self.q_net(state_t).cpu().numpy().ravel()
 
         if allowed_mask.sum() == 0:
@@ -93,13 +96,21 @@ class DQNAgent:
         if len(self.replay_buffer) < self.batch_size:
             return 0.0
 
-        states, actions, rewards, next_states, dones = self.replay_buffer.sample(self.batch_size)
+        states, actions, rewards, next_states, dones = self.replay_buffer.sample(
+            self.batch_size
+        )
 
         states = torch.tensor(states, dtype=torch.float32, device=self.device)
-        actions = torch.tensor(actions, dtype=torch.int64, device=self.device).unsqueeze(1)
-        rewards = torch.tensor(rewards, dtype=torch.float32, device=self.device).unsqueeze(1)
+        actions = torch.tensor(
+            actions, dtype=torch.int64, device=self.device
+        ).unsqueeze(1)
+        rewards = torch.tensor(
+            rewards, dtype=torch.float32, device=self.device
+        ).unsqueeze(1)
         next_states = torch.tensor(next_states, dtype=torch.float32, device=self.device)
-        dones = torch.tensor(dones, dtype=torch.float32, device=self.device).unsqueeze(1)
+        dones = torch.tensor(dones, dtype=torch.float32, device=self.device).unsqueeze(
+            1
+        )
 
         q_values = self.q_net(states).gather(1, actions)
         with torch.no_grad():
@@ -117,7 +128,7 @@ class DQNAgent:
         state, _ = self.env.reset()
         episode_reward = 0
         self.prev_scramble_length = self.env.current_scramble
-        best_success_rate = 0.0 
+        best_success_rate = 0.0
         best_scramble_len = 0
         episodes_in_current_scramble_len = 0
         step = 0
@@ -133,7 +144,7 @@ class DQNAgent:
 
             self.replay_buffer.push(state, action, reward, next_state, done)
 
-            self.prev_face_id = (action % 6)
+            self.prev_face_id = action % 6
 
             state = next_state
             episode_reward += reward
@@ -141,7 +152,9 @@ class DQNAgent:
             if done:
                 last_solved = terminated
                 last_scramble = self.env.current_scramble
-                state, _ = self.env.reset(last_solved=last_solved, last_scramble=last_scramble)
+                state, _ = self.env.reset(
+                    last_solved=last_solved, last_scramble=last_scramble
+                )
                 episodes_in_current_scramble_len += 1
 
                 self.prev_face_id = None
@@ -152,16 +165,22 @@ class DQNAgent:
                     if self.update_epsilon:
                         min_scramble = self.env.scramble_min
                         max_scramble = self.env.scramble_max
-                        scramble_ratio = (current_scramble - min_scramble) / max(1, max_scramble - min_scramble)
+                        scramble_ratio = (current_scramble - min_scramble) / max(
+                            1, max_scramble - min_scramble
+                        )
 
                         base_decay = self.epsilon_decay
                         scale = 1.05
 
-                        self.epsilon_decay = base_decay + (1.0 - base_decay) * (scramble_ratio ** scale)
+                        self.epsilon_decay = base_decay + (1.0 - base_decay) * (
+                            scramble_ratio**scale
+                        )
 
                         self.epsilon_decay = min(self.epsilon_decay, 0.9999982)
                         self.epsilon = max(0.2, self.epsilon_start)
-                        print(f"Current scramble: {current_scramble}, epsilon_decay: {self.epsilon_decay:.10f}")
+                        print(
+                            f"Current scramble: {current_scramble}, epsilon_decay: {self.epsilon_decay:.10f}"
+                        )
                 self.prev_scramble_length = current_scramble
 
                 self.episode_rewards.append(episode_reward)
@@ -182,19 +201,37 @@ class DQNAgent:
                 self.target_net.load_state_dict(self.q_net.state_dict())
 
             if self.use_mlflow and step % log_every == 0 and step > 0:
-                avg_reward = np.mean(self.episode_rewards[-20:]) if self.episode_rewards else 0.0
+                avg_reward = (
+                    np.mean(self.episode_rewards[-20:]) if self.episode_rewards else 0.0
+                )
                 total_episodes = self.success_count + self.fail_count
-                success_rate = np.mean(self.last_window_results) if self.last_window_results else 0.0
-                max_reward = np.max(self.episode_rewards[-100:]) if self.episode_rewards else 0.0
+                success_rate = (
+                    np.mean(self.last_window_results)
+                    if self.last_window_results
+                    else 0.0
+                )
+                max_reward = (
+                    np.max(self.episode_rewards[-100:]) if self.episode_rewards else 0.0
+                )
 
-                if ((current_scramble > best_scramble_len and success_rate > (best_success_rate - 0.25)) \
-                or (current_scramble == best_scramble_len and success_rate > best_success_rate)) and episodes_in_current_scramble_len > 5000:
+                if (
+                    (
+                        current_scramble > best_scramble_len
+                        and success_rate > (best_success_rate - 0.25)
+                    )
+                    or (
+                        current_scramble == best_scramble_len
+                        and success_rate > best_success_rate
+                    )
+                ) and episodes_in_current_scramble_len > 5000:
                     best_scramble_len = current_scramble
                     best_success_rate = success_rate
                     os.makedirs("models", exist_ok=True)
                     best_path = self.model_path
                     self.save(best_path, debug=False)
-                    print(f"🟢 New best model saved with success rate {best_success_rate:.3f} (at scramble len {best_scramble_len})")
+                    print(
+                        f"🟢 New best model saved with success rate {best_success_rate:.3f} (at scramble len {best_scramble_len})"
+                    )
 
                 metrics = {
                     "success_rate": success_rate,
@@ -221,11 +258,15 @@ class DQNAgent:
                     f"current_scramble={metrics['current_scramble']}"
                 )
 
-                if (best_scramble_len >= self.env.scramble_max and
-                    best_success_rate >= 0.99 and
-                    episodes_in_current_scramble_len >= 5000):
-                    print(f"\n✅ Training complete: target performance reached! "
-                        f"(scramble={best_scramble_len}, success_rate={best_success_rate:.3f})")
+                if (
+                    best_scramble_len >= self.env.scramble_max
+                    and best_success_rate >= 0.99
+                    and episodes_in_current_scramble_len >= 5000
+                ):
+                    print(
+                        f"\n✅ Training complete: target performance reached! "
+                        f"(scramble={best_scramble_len}, success_rate={best_success_rate:.3f})"
+                    )
                     break
 
         print("✅ Training completed.")

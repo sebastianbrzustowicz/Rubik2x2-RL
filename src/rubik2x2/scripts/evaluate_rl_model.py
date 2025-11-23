@@ -1,6 +1,6 @@
-from envs.rubik2x2_env import Rubik2x2Env
-from agents.dqn_agent import DQNAgent
-from envs.render_utils import render_cube_ascii
+from rubik2x2.envs.rubik2x2_env import Rubik2x2Env
+from rubik2x2.agents.dqn_agent import DQNAgent
+from rubik2x2.envs.render_utils import render_cube_ascii
 import random
 
 
@@ -10,7 +10,7 @@ def evaluate_model(
     scramble_max=11,
     max_steps=20,
     device="cuda",
-    debug=False
+    debug=False,
 ):
     env = Rubik2x2Env(
         max_steps=max_steps,
@@ -39,13 +39,17 @@ def evaluate_model(
 
         scramble_moves = []
         while True:
-            scramble_moves = env.cube.scramble(scramble_len, seed=random.randint(0, 10000))
+            scramble_moves = env.cube.scramble(
+                scramble_len, seed=random.randint(0, 10000)
+            )
             if not env.cube.is_solved():
                 break
-        
+
         if debug:
             print("\nScramble moves:")
-            print(" → ".join([f"{face_dir(face, dirn)}" for face, dirn in scramble_moves]))
+            print(
+                " → ".join([f"{face_dir(face, dirn)}" for face, dirn in scramble_moves])
+            )
 
             print("\nInitial scrambled cube:")
             print(render_cube_ascii(env.cube.state))
@@ -83,12 +87,16 @@ def evaluate_model(
 
         total_scrambles += 1
         if debug:
-            print(f"\nAgent moves ({len(move_seq)}): {' → '.join(action_to_str(a) for a in move_seq)}")
+            print(
+                f"\nAgent moves ({len(move_seq)}): {' → '.join(action_to_str(a) for a in move_seq)}"
+            )
             print("=" * 60)
 
     print(f"\n=== EVALUATION SUMMARY ===")
     print(f"Total scrambles: {total_scrambles}")
-    print(f"Solved scrambles: {solved_scrambles} ({solved_scrambles / total_scrambles * 100:.1f}%)")
+    print(
+        f"Solved scrambles: {solved_scrambles} ({solved_scrambles / total_scrambles * 100:.1f}%)"
+    )
 
 
 def face_dir(face_id, direction):

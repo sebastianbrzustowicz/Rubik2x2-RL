@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class ReplayBuffer:
     def __init__(self, state_dim=144, capacity=1_000_000):
         self.capacity = capacity

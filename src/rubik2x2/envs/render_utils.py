@@ -1,10 +1,10 @@
 COLOR_CODES = {
-    0: "\033[97m",        # White (U)
-    1: "\033[93m",        # Yellow (D)
-    2: "\033[92m",        # Green (F)
-    3: "\033[94m",        # Blue (B)
+    0: "\033[97m",  # White (U)
+    1: "\033[93m",  # Yellow (D)
+    2: "\033[92m",  # Green (F)
+    3: "\033[94m",  # Blue (B)
     4: "\033[38;5;208m",  # Orange (L)
-    5: "\033[91m",        # Red (R)
+    5: "\033[91m",  # Red (R)
 }
 RESET = "\033[0m"
 
@@ -21,6 +21,7 @@ def render_cube_ascii(state, use_color=True):
           D0 D1
           D2 D3
     """
+
     def c(face_id, idx):
         val = state[face_id][idx]
         if use_color:

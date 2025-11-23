@@ -1,6 +1,7 @@
-from envs.rubik2x2_env import Rubik2x2Env
-from agents.dqn_agent import DQNAgent
+from rubik2x2.envs.rubik2x2_env import Rubik2x2Env
+from rubik2x2.agents.dqn_agent import DQNAgent
 import mlflow
+
 
 def train_rl_agent(
     total_steps=200_000,
@@ -18,18 +19,20 @@ def train_rl_agent(
     epsilon_decay=0.9999,
     resets_per_jump=5000,
     model_path="models/rl_agent.pth",
-    update_epsilon=False
+    update_epsilon=False,
 ):
     if use_mlflow:
         mlflow.set_experiment("Rubik2x2_DQN")
         mlflow.start_run()
-        mlflow.log_params({
-            "total_steps": total_steps,
-            "reward_mode": reward_mode,
-            "scramble_min": scramble_min,
-            "scramble_max": scramble_max,
-            "device": device,
-        })
+        mlflow.log_params(
+            {
+                "total_steps": total_steps,
+                "reward_mode": reward_mode,
+                "scramble_min": scramble_min,
+                "scramble_max": scramble_max,
+                "device": device,
+            }
+        )
 
     env = Rubik2x2Env(
         max_steps=max_steps,
@@ -41,9 +44,9 @@ def train_rl_agent(
     )
 
     agent = DQNAgent(
-        env, 
-        device=device, 
-        use_mlflow=use_mlflow, 
+        env,
+        device=device,
+        use_mlflow=use_mlflow,
         batch_size=batch_size,
         lr=lr,
         gamma=gamma,
@@ -51,13 +54,13 @@ def train_rl_agent(
         epsilon_end=epsilon_end,
         epsilon_decay=epsilon_decay,
         model_path=model_path,
-        update_epsilon=update_epsilon
+        update_epsilon=update_epsilon,
     )
     agent.train(total_steps=total_steps)
 
     if use_mlflow:
         mlflow.end_run()
-    
+
     return model_path
 
 

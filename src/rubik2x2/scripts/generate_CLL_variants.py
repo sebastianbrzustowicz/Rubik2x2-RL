@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from envs.rubik2x2_env import Rubik2x2Env
+from rubik2x2.envs.rubik2x2_env import Rubik2x2Env
 
 input_path = Path("datasets/upper_layer_algorithms.json")
 output_path = Path("datasets/upper_layer_algorithms_full.json")
@@ -10,16 +10,29 @@ with open(input_path, "r", encoding="utf-8") as f:
 
 env = Rubik2x2Env()
 
+
 def apply_moves(moves):
     """Return the cube state after applying a sequence of moves."""
     env.cube.reset()
     MOVE_MAP = {
-        "U": (0, 0), "U'": (0, 1), "U2": (0, 2),
-        "D": (1, 0), "D'": (1, 1), "D2": (1, 2),
-        "F": (2, 0), "F'": (2, 1), "F2": (2, 2),
-        "B": (3, 0), "B'": (3, 1), "B2": (3, 2),
-        "L": (4, 0), "L'": (4, 1), "L2": (4, 2),
-        "R": (5, 0), "R'": (5, 1), "R2": (5, 2),
+        "U": (0, 0),
+        "U'": (0, 1),
+        "U2": (0, 2),
+        "D": (1, 0),
+        "D'": (1, 1),
+        "D2": (1, 2),
+        "F": (2, 0),
+        "F'": (2, 1),
+        "F2": (2, 2),
+        "B": (3, 0),
+        "B'": (3, 1),
+        "B2": (3, 2),
+        "L": (4, 0),
+        "L'": (4, 1),
+        "L2": (4, 2),
+        "R": (5, 0),
+        "R'": (5, 1),
+        "R2": (5, 2),
     }
     for move in moves:
         face, direction = MOVE_MAP[move]
@@ -31,6 +44,7 @@ def apply_moves(moves):
             env.cube.rotate_180(face)
     return tuple(env.cube.state.flatten())
 
+
 def generate_mirrors(alg_name, moves):
     mirrors = {}
     mirror_mods = [("U", "U'"), ("U2", "U2"), ("U'", "U")]
@@ -39,6 +53,7 @@ def generate_mirrors(alg_name, moves):
         mirrors[variant_name] = [prefix] + moves + [suffix]
     return mirrors
 
+
 def generate_rotations(alg_name, moves):
     rotations = {}
     prefixes = ["U", "U'", "U2"]
@@ -46,6 +61,7 @@ def generate_rotations(alg_name, moves):
         variant_name = f"{alg_name}_rot{i}"
         rotations[variant_name] = [prefix] + moves
     return rotations
+
 
 unique_states = {}
 extended_algorithms = {}
@@ -82,5 +98,7 @@ lines.append("}")
 with open(output_path, "w", encoding="utf-8") as f:
     f.write("\n".join(lines))
 
-print(f"✅ Generated {len(final_algorithms)} unique algorithms (mirrors + rotations removed duplicates)")
+print(
+    f"✅ Generated {len(final_algorithms)} unique algorithms (mirrors + rotations removed duplicates)"
+)
 print(f"📄 Saved to: {output_path}")
