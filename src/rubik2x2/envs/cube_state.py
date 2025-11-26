@@ -84,7 +84,7 @@ class Cube2x2:
                 last_face = face_id
 
                 if debug:
-                    from envs.render_utils import render_cube_ascii
+                    from rubik2x2.envs.render_utils import render_cube_ascii
 
                     print(f"Move {move_idx+1}/{n}: face={face_id}, dir={direction}")
                     print(render_cube_ascii(self.state))
