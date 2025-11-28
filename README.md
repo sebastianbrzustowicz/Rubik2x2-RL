@@ -25,7 +25,9 @@ make run-pipeline SCRAMBLE="U' R F R U R F' U' R2 U' F"
 ```
 Example generated output:
 ```bash
-Full solution (5 moves): F2 B L U B'
+Full solution: F2 B L U B'
+
+(Totally 5 moves)
 ```
 
 
