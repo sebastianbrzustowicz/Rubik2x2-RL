@@ -51,26 +51,30 @@ def run_pipeline(
         elif direction == 2:
             env.cube.rotate_180(face_id)
 
-    cube_state_scramble = np.copy(env.cube.state)
-
     obs = env._get_obs()
     done = False
     step_count = 0
     rl_moves = []
 
-    if debug:
-        print("\n--- Running RL moves ---")
+    yield f"Full solution: "
+
+    # --- RL model ---
     while not done and step_count < max_steps:
         action = rl_agent.select_action(obs)
         obs, reward, terminated, truncated, info, action = env.step(
             action, return_applied_action=True
         )
+
+        move_notation = action_to_notation(action)
         rl_moves.append(action)
+
+        # Yield every generated RL move
+        yield move_notation
+
         step_count += 1
         done = terminated or truncated
 
-    cube_state_rl = np.copy(env.cube.state)
-
+    # --- IL model ---
     cube_state = np.array(env.cube.state).flatten()
     x = np.eye(6, dtype=np.float32)[cube_state].flatten()
     x = torch.tensor(x, dtype=torch.float32).unsqueeze(0).to(device)
@@ -88,29 +92,8 @@ def run_pipeline(
             f"IL model failed to solve cube with predicted algorithm '{alg_name}'"
         )
 
-    cube_state_il = np.copy(env.cube.state)
-    rl_notation = [action_to_notation(a) for a in rl_moves]
-    total_moves = rl_notation + alg_moves
-
-    if debug:
-        print("\n=== RUN PIPELINE ===\n")
-        print(f"Scramble moves: {scramble_str}")
-        print("\n--- Cube state after scramble ---")
-        print(render_cube_ascii(cube_state_scramble))
-
-        print("\n--- Cube state after RL model ---")
-        print(render_cube_ascii(cube_state_rl))
-
-        print("\n--- Cube state after IL model ---")
-        print(render_cube_ascii(cube_state_il))
-        print("\nRL moves:", [action_to_notation(a) for a in rl_moves])
-        print("IL moves:", alg_moves)
-    elif quiet:
-        print(" ".join(total_moves))
-    else:
-        print(f"\nFull solution ({len(total_moves)} moves): {' '.join(total_moves)}")
-
-    return rl_moves, alg_moves, cube_state_rl, cube_state_il
+    # IL moves as full block
+    yield alg_moves
 
 
 def parse_scramble(scramble_str):
@@ -170,7 +153,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    run_pipeline(
+    gen = run_pipeline(
         rl_model_path=args.rl_model_path,
         il_model_path=args.il_model_path,
         algo_file=args.algo_file,
@@ -180,3 +163,19 @@ if __name__ == "__main__":
         debug=False,
         quiet=args.quiet,
     )
+
+    rl_moves_notation = []
+    print()
+
+    for item in gen:
+        if isinstance(item, str):
+            rl_moves_notation.append(item)
+            print(item, end=" ", flush=True)
+        else:
+            il_moves = item
+            il_moves_notation = " ".join(il_moves)
+            print(il_moves_notation, end=" ", flush=True)
+
+    print()
+    total_moves_count = len(rl_moves_notation) + len(il_moves)
+    print(f"\n(Totally {total_moves_count} moves)\n")
